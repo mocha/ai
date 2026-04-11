@@ -56,10 +56,10 @@ before dispatching. If the user suggests changes, adjust.
 
 ### 3. Generate expert prompts
 
-For EACH expert, find and read the shared methodology at
-`_shared_expert/expert-prompt-generator.md` in the same parent directory as this
-skill (i.e., `../_shared_expert/`). Also read the vocabulary guide and prompt
-template from that same `_shared_expert/` directory.
+For EACH expert, read the shared methodology files:
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/expert-prompt-generator.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/vocabulary-guide.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/prompt-template.md`
 
 Follow the expert-prompt-generator steps for each expert:
 - Distinct identity matching their perspective

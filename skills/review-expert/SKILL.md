@@ -31,10 +31,10 @@ Read the target fully before proceeding.
 
 ### 2. Generate the expert prompt
 
-Find and read the shared methodology file `_shared_expert/expert-prompt-generator.md`
-located in the same parent directory as this skill (i.e., `../_shared_expert/`
-relative to this SKILL.md). Also read `vocabulary-guide.md` and
-`prompt-template.md` from that same `_shared_expert/` directory.
+Read these files from the plugin's shared methodology directory:
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/expert-prompt-generator.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/vocabulary-guide.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/prompt-template.md`
 
 Follow the expert-prompt-generator steps:
 

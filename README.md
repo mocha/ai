@@ -2,7 +2,7 @@
 
 A Claude Code plugin that generates domain-specific expert reviewers on-the-fly using vocabulary routing. Instead of picking from pre-built expert profiles, each expert is custom-built from the document being reviewed — precise terminology activates deep knowledge clusters in the model, producing reviews that catch issues generic reviewers miss.
 
-Built on [Forge](https://github.com/jdforsythe/forge) methodology.
+Builds on practices from the [jdforsythe/forge](https://github.com/jdforsythe/forge) methodology.
 
 ## Skills
 
@@ -44,11 +44,12 @@ The vocabulary routing alone (no model upgrade) tripled the issue count. The pan
 ## Install
 
 ```bash
-# From GitHub
-claude /install-plugin https://github.com/mocha/ai-experts
+# Add the marketplace, then install the plugin
+/plugin marketplace add https://github.com/mocha/ai-experts
+/plugin install ai-experts@mocha-ai-experts
 
-# Local development
-claude --plugin-dir ./ai-experts
+# Or for local development / testing
+claude --plugin-dir /path/to/ai-experts
 ```
 
 ## Usage
@@ -82,7 +83,7 @@ ai-experts/
 ├── .claude-plugin/
 │   └── plugin.json           # Plugin manifest
 ├── skills/
-│   ├── _shared_expert/       # Internal methodology (not a skill)
+│   ├── _shared/       # Internal methodology (not a skill)
 │   │   ├── expert-prompt-generator.md
 │   │   ├── vocabulary-guide.md
 │   │   └── prompt-template.md

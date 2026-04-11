@@ -34,9 +34,10 @@ Read the spec fully before proceeding.
 
 ### 2. Generate the expert prompt
 
-Find and read the shared methodology at `_shared_expert/expert-prompt-generator.md`
-in the same parent directory as this skill (i.e., `../_shared_expert/`). Also read
-the vocabulary guide and prompt template from that same directory.
+Read the shared methodology files:
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/expert-prompt-generator.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/vocabulary-guide.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/_shared/prompt-template.md`
 
 Follow the expert-prompt-generator steps:
 
