@@ -4,12 +4,11 @@ description: >-
   Generate a domain-specific expert reviewer on-the-fly and dispatch it to
   review a document, spec, plan, or code. Use when the user says "review this",
   "expert review", "solo review", "get an expert opinion", or "what would an
-  expert think about this". Unlike /consult which picks from pre-built expert
-  profiles, this skill creates a bespoke vocabulary-routed expert tailored to
-  the subject matter.
+  expert think about this". Creates a bespoke vocabulary-routed expert
+  tailored to the subject matter of whatever document is provided.
 ---
 
-# Review Expert
+# Solo Review
 
 Generates a bespoke domain expert and dispatches it to review a document.
 The expert's prompt is built using vocabulary routing — precise domain

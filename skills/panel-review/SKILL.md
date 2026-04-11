@@ -8,7 +8,7 @@ description: >-
   experts think", or wants broader coverage than a single expert review.
 ---
 
-# Review Panel
+# Panel Review
 
 Generates 2-5 bespoke domain experts with distinct specializations and
 dispatches them in parallel. Each expert gets vocabulary routing tuned to

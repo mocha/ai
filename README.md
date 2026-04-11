@@ -6,11 +6,21 @@ Builds on practices from the [jdforsythe/forge](https://github.com/jdforsythe/fo
 
 ## Skills
 
+### Building Blocks
+
 | Skill | What it does |
 |---|---|
 | `/expert:solo-review` | Generate a single bespoke expert and dispatch it to review a document |
 | `/expert:panel-review` | Generate 2-5 experts with different specializations and dispatch in parallel |
-| `/expert:developer` | Full pipeline: review spec, plan, panel-validate, execute in worktree, PR |
+
+### Flows
+
+| Skill | What it does |
+|---|---|
+| `/expert:spec-review` | Iterative spec review — panel review, fix, re-review (max 2 rounds) |
+| `/expert:plan-review` | Decompose a plan into tasks, panel-review each task spec individually |
+| `/expert:develop` | Single task execution — fresh expert, worktree, build, validate |
+| `/expert:implement` | Full pipeline — orchestrates spec-review, planning, plan-review, and per-task development |
 
 ## How It Works
 
@@ -57,13 +67,22 @@ Then install the plugin:
 
 ```bash
 # Single expert review
-/expert:solo-review path/to/SPEC.md
+/expert:solo-review path/to/document.md
 
 # Multi-perspective panel review
-/expert:panel-review path/to/SPEC.md
+/expert:panel-review path/to/document.md
 
-# Full development pipeline from spec
-/expert:developer path/to/SPEC.md
+# Harden a spec through iterative review
+/expert:spec-review path/to/SPEC.md
+
+# Decompose a plan and review each task
+/expert:plan-review path/to/PLAN.md
+
+# Develop a single task with a fresh expert
+/expert:develop path/to/TASK.md
+
+# Full pipeline from spec to PR
+/expert:implement path/to/SPEC.md
 ```
 
 ## How the Methodology Works
@@ -89,14 +108,18 @@ ai/
 │   │   ├── expert-prompt-generator.md
 │   │   ├── vocabulary-guide.md
 │   │   └── prompt-template.md
-│   ├── solo-review/
+│   ├── solo-review/           # Building block: single expert review
 │   │   └── SKILL.md
-│   ├── panel-review/
+│   ├── panel-review/          # Building block: multi-expert panel
 │   │   └── SKILL.md
-│   └── developer/
-│       ├── SKILL.md
-│       └── references/
-│           └── flow-development.md
+│   ├── spec-review/           # Flow: iterative spec approval
+│   │   └── SKILL.md
+│   ├── plan-review/           # Flow: plan decomposition + task review
+│   │   └── SKILL.md
+│   ├── develop/               # Flow: per-task expert development
+│   │   └── SKILL.md
+│   └── implement/             # Orchestrator: full pipeline
+│       └── SKILL.md
 ├── LICENSE
 └── README.md
 ```
