@@ -1,9 +1,9 @@
 ---
-name: review-expert
+name: solo-review
 description: >-
   Generate a domain-specific expert reviewer on-the-fly and dispatch it to
   review a document, spec, plan, or code. Use when the user says "review this",
-  "expert review", "review-expert", "get an expert opinion", or "what would an
+  "expert review", "solo review", "get an expert opinion", or "what would an
   expert think about this". Unlike /consult which picks from pre-built expert
   profiles, this skill creates a bespoke vocabulary-routed expert tailored to
   the subject matter.
@@ -103,11 +103,11 @@ When the expert returns, show the user:
   vocabulary clusters (so the user understands the expert's lens)
 - **Findings:** The expert's full structured output
 - **Next steps:** Offer to dispatch a different expert perspective, run a
-  full panel review via `/review-panel`, or address specific findings
+  full panel review via `/expert:panel-review`, or address specific findings
 
 ## What this skill does NOT do
 
 - Does not pick from pre-built expert profiles — generates bespoke experts
 - Does not modify the reviewed document — review only
-- Does not run multiple experts — use `/review-panel` for that
+- Does not run multiple experts — use `/expert:panel-review` for that
 - Does not perform the review itself — always dispatches a subagent

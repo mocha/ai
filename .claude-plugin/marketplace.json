@@ -1,5 +1,5 @@
 {
-  "name": "mocha-ai-experts",
+  "name": "mocha-ai",
   "owner": {
     "name": "Patrick Deuley",
     "email": "patrick@deuley.ltd"
@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "ai-experts",
+      "name": "experts",
       "source": "./",
       "version": "0.1.0",
       "description": "Generate bespoke domain experts on-the-fly for reviews and development. Precise terminology activates deep knowledge clusters, catching domain-specific issues generic reviewers miss.",

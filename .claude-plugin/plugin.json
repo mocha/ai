@@ -1,12 +1,12 @@
 {
-  "name": "ai-experts",
+  "name": "expert",
   "description": "Vocabulary-routed expert reviews and development. Generates bespoke domain experts on-the-fly using Forge methodology — precise terminology activates deep knowledge clusters, producing reviews that catch domain-specific issues generic reviewers miss.",
   "version": "0.1.0",
   "author": {
     "name": "Patrick Deuley"
   },
   "license": "MIT",
-  "repository": "https://github.com/mocha/ai-experts",
+  "repository": "https://github.com/mocha/ai",
   "keywords": [
     "review",
     "expert",

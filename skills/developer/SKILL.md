@@ -1,10 +1,10 @@
 ---
-name: execution-expert
+name: developer
 description: >-
   End-to-end development from a spec or proposal. Generates a domain-specific
   expert context, reviews and improves the spec, builds an implementation plan,
   validates with an expert panel, and executes in an isolated worktree. Use when
-  the user says "execution-expert", "build this spec", "implement this",
+  the user says "developer", "build this spec", "implement this",
   "develop from spec", "execute against this", or has a spec/proposal they want
   turned into working code.
 ---

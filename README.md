@@ -8,9 +8,9 @@ Builds on practices from the [jdforsythe/forge](https://github.com/jdforsythe/fo
 
 | Skill | What it does |
 |---|---|
-| `/ai-experts:review-expert` | Generate a single bespoke expert and dispatch it to review a document |
-| `/ai-experts:review-panel` | Generate 2-5 experts with different specializations and dispatch in parallel |
-| `/ai-experts:execution-expert` | Full pipeline: review spec, plan, panel-validate, execute in worktree, PR |
+| `/expert:solo-review` | Generate a single bespoke expert and dispatch it to review a document |
+| `/expert:panel-review` | Generate 2-5 experts with different specializations and dispatch in parallel |
+| `/expert:developer` | Full pipeline: review spec, plan, panel-validate, execute in worktree, PR |
 
 ## How It Works
 
@@ -43,26 +43,27 @@ The vocabulary routing alone (no model upgrade) tripled the issue count. The pan
 
 ## Install
 
+Add the marketplace:
 ```bash
-# Add the marketplace, then install the plugin
-/plugin marketplace add mocha/ai-experts
-/plugin install ai-experts@mocha-ai-experts
+/plugin marketplace add mocha/ai
+```
 
-# Or for local development / testing
-claude --plugin-dir /path/to/ai-experts
+Then install the plugin:
+```bash
+/plugin install experts@mocha-ai
 ```
 
 ## Usage
 
 ```bash
 # Single expert review
-/ai-experts:review-expert path/to/SPEC.md
+/expert:solo-review path/to/SPEC.md
 
 # Multi-perspective panel review
-/ai-experts:review-panel path/to/SPEC.md
+/expert:panel-review path/to/SPEC.md
 
 # Full development pipeline from spec
-/ai-experts:execution-expert path/to/SPEC.md
+/expert:developer path/to/SPEC.md
 ```
 
 ## How the Methodology Works
@@ -79,19 +80,20 @@ The expert generation process follows six principles from the [Forge Methodology
 ## Project Structure
 
 ```
-ai-experts/
+ai/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
+│   ├── plugin.json            # Plugin manifest
+│   └── marketplace.json       # Marketplace catalog
 ├── skills/
-│   ├── _shared/       # Internal methodology (not a skill)
+│   ├── _shared/               # Internal methodology (not a skill)
 │   │   ├── expert-prompt-generator.md
 │   │   ├── vocabulary-guide.md
 │   │   └── prompt-template.md
-│   ├── review-expert/
+│   ├── solo-review/
 │   │   └── SKILL.md
-│   ├── review-panel/
+│   ├── panel-review/
 │   │   └── SKILL.md
-│   └── execution-expert/
+│   └── developer/
 │       ├── SKILL.md
 │       └── references/
 │           └── flow-development.md

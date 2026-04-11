@@ -53,7 +53,7 @@ The plan should address:
 
 ### 3. Panel Review the Plan
 
-Invoke `/review-panel` on the implementation plan.
+Invoke `/expert:panel-review` on the implementation plan.
 
 The panel should cover perspectives relevant to the plan's domain. At
 minimum, include:
@@ -69,7 +69,7 @@ are most relevant — use them to select panel composition.
 IF the panel verdict is "revise" AND this is round 1 or 2:
 - Address blocking issues identified by the panel
 - Update the plan with fixes
-- Re-invoke `/review-panel` on the revised plan
+- Re-invoke `/expert:panel-review` on the revised plan
 
 IF the panel verdict is "ship":
 - Proceed to execution

@@ -1,9 +1,9 @@
 ---
-name: review-panel
+name: panel-review
 description: >-
   Generate multiple domain-specific expert reviewers with different
   specializations and dispatch them in parallel to review a document from
-  multiple angles. Use when the user says "panel review", "review-panel",
+  multiple angles. Use when the user says "panel review", "panel-review",
   "multiple opinions", "review from multiple angles", "what do different
   experts think", or wants broader coverage than a single expert review.
 ---
