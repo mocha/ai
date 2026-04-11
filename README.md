@@ -45,7 +45,7 @@ The vocabulary routing alone (no model upgrade) tripled the issue count. The pan
 
 ```bash
 # Add the marketplace, then install the plugin
-/plugin marketplace add https://github.com/mocha/ai-experts
+/plugin marketplace add mocha/ai-experts
 /plugin install ai-experts@mocha-ai-experts
 
 # Or for local development / testing

@@ -5,12 +5,14 @@
     "email": "patrick@deuley.ltd"
   },
   "metadata": {
-    "description": "Vocabulary-routed expert reviews building on the jdforsythe/forge methodology"
+    "description": "Vocabulary-routed expert reviews building on the jdforsythe/forge methodology",
+    "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "ai-experts",
-      "source": ".",
+      "source": "./",
+      "version": "0.1.0",
       "description": "Generate bespoke domain experts on-the-fly for reviews and development. Precise terminology activates deep knowledge clusters, catching domain-specific issues generic reviewers miss.",
       "tags": ["review", "expert", "vocabulary-routing", "code-review", "spec-review"]
     }
