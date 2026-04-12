@@ -53,6 +53,8 @@ The vocabulary routing alone (no model upgrade) tripled the issue count. The pan
 
 ## Install
 
+### From marketplace
+
 Add the marketplace:
 ```bash
 /plugin marketplace add mocha/ai
@@ -62,6 +64,17 @@ Then install the plugin:
 ```bash
 /plugin install experts@mocha-ai
 ```
+
+### Local development
+
+Clone the repo and load it directly with `--plugin-dir`:
+
+```bash
+git clone https://github.com/mocha/ai.git
+claude --plugin-dir ./ai
+```
+
+This loads the plugin from your working directory for that session. Changes you make to skill files take effect after running `/reload-plugins` — no reinstall needed.
 
 ## Usage
 
