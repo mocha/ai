@@ -57,7 +57,7 @@ Skylark is a semi-autonomous agentic development pipeline featuring a detailed w
 
 ---
 
-### `reflect`
+### [`reflect`](plugins/reflect/README.md)
 
 Claude's Insights tool is incredibly useful for helping you understand your own journey as you start to explore more complex usage. It helps you spot areas where you are potentially missing out on using advanced features and provides pointers on how to improve things that are already going well.
 
@@ -71,7 +71,7 @@ Claude's Insights tool is incredibly useful for helping you understand your own 
 
 ---
 
-### `llmstxt`
+### [`llmstxt`](plugins/llmstxt/README.md)
 
 | Command | Purpose |
 |---|---|
