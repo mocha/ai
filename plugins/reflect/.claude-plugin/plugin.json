@@ -1,0 +1,16 @@
+{
+  "name": "reflect",
+  "description": "Date-scoped Claude Code usage reflection. Reimagines the built-in /insights command to produce a similar eight-section report bounded to a user-specified window (last 24h, this week, since yesterday, etc.).",
+  "version": "0.1.0",
+  "author": {
+    "name": "Patrick Deuley"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/mocha/ai/plugins/reflect/README.md",
+  "keywords": [
+    "insights",
+    "reflection",
+    "usage-analysis",
+    "retrospective"
+  ]
+}

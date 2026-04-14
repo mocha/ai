@@ -1,142 +1,119 @@
-# ai-experts
+# mocha-ai
 
-A Claude Code plugin that generates domain-specific expert reviewers on-the-fly using vocabulary routing. Instead of picking from pre-built expert profiles, each expert is custom-built from the document being reviewed — precise terminology activates deep knowledge clusters in the model, producing reviews that catch issues generic reviewers miss.
+Mocha's Claude Code plugins. A small, curated set of tools
+for running AI-assisted engineering workflows — expert reviews, autonomous
+implementation pipelines, and usage reflection.
 
-Builds on practices from the [jdforsythe/forge](https://github.com/jdforsythe/forge) methodology.
+## 🐙 Plugins
 
-## Skills
-
-### Building Blocks
-
-| Skill | What it does |
+| Plugin | What it does |
 |---|---|
-| `/expert:solo-review` | Generate a single bespoke expert and dispatch it to review a document |
-| `/expert:panel-review` | Generate 2-5 experts with different specializations and dispatch in parallel |
+| [**skylark**](plugins/skylark/README.md) | Workflow v2: An autonomous-agent development pipeline that routes "expert" agents through a robust and risk-aware development workflow. Moves through bugs fast but slow-and-steady through load-bearing changes. |
+| [**reflect**](plugins/reflect/README.md) | A reimagination of Claude's built-in `/insights` command, generating the same report but now using a hackable skill+script combo instead of hardcoded TS inside the harness. 😉 |
+| [**llmstxt**](plugins/llmstxt/README.md) | Create and maintain `llms.txt` navigation files across large content vaults and provide agent-first directory maps that cut traversal tokens in deep knowledge bases. |
 
-### Flows
+<details>
 
-| Skill | What it does |
+<summary>Retired plugins</summary>
+
+| Plugin | What it does |
 |---|---|
-| `/expert:spec-review` | Iterative spec review — panel review, fix, re-review (max 2 rounds) |
-| `/expert:plan-review` | Decompose a plan into tasks, panel-review each task spec individually |
-| `/expert:develop` | Single task execution — fresh expert, worktree, build, validate |
-| `/expert:implement` | Full pipeline — orchestrates spec-review, planning, plan-review, and per-task development |
+| [**experts**](plugins/experts/README.md) | Generate domain-specific expert reviewers on-the-fly using vocabulary routing based on [forge](https://github.com/jdforsythe/forge). Provides primitives for spec, plan, and code review; ripe for remixing. Superseded by `skylark`, above. |
+| [**triad**](plugins/triad/README.md) | Three-agent (PM/PgM/EM) autonomous development framework coordinating via file-based inbox messages and orchestrated over tmux. Superseded by `experts`, above. |
 
-## How It Works
+</details>
 
-### Vocabulary Routing
-
-Large language models organize knowledge in clusters. The term "BM25 (Robertson & Zaragoza) — term frequency saturation, inverse document frequency" activates a deep information retrieval cluster. The phrase "full-text search" activates a broad, shallow one.
-
-This plugin reads whatever document you point it at, extracts precise domain terminology, upgrades it to practitioner-grade language with originator attribution, and organizes it into 3-5 clusters. These clusters become the expert's operating context — routing the model into the right knowledge region before it begins reviewing.
-
-### The Expert Generation Pipeline
-
-1. **Analyze** the document — identify domain, technology stack, key abstractions, edge cases
-2. **Draft identity** — real job title, <50 tokens, no flattery (PRISM research: superlatives degrade accuracy)
-3. **Extract vocabulary** — 15-30 terms, practitioner-tested, attributed, clustered by expert discourse patterns
-4. **Derive anti-patterns** — 5-10 domain-specific failure modes with detection signals and resolutions
-5. **Dispatch** — the generated prompt becomes the subagent's primary context
-
-### Benchmark Results
-
-Tested against the same spec document with identical review instructions:
-
-| Approach | Tokens | Time | Issues Found |
-|---|---|---|---|
-| Generic prompt (Sonnet) | ~5K | 43s | 2 |
-| Vocabulary-routed (Sonnet) | 28K | 89s | 15 |
-| Vocabulary-routed (Opus) | 31K | 128s | 22 |
-| Panel, 4 experts (Opus) | 137K | 163s | 43 |
-
-The vocabulary routing alone (no model upgrade) tripled the issue count. The panel caught 18 findings that no single-expert run found — domain-specific issues like FTS5 column tokenization behavior, Obsidian alias resolution gaps, and cross-query score incomparability.
+---
 
 ## Install
 
-### From marketplace
-
 Add the marketplace:
+
 ```bash
 /plugin marketplace add mocha/ai
 ```
 
-Then install the plugin:
-```bash
-/plugin install experts@mocha-ai
-```
-
-### Local development
-
-Clone the repo and load it directly with `--plugin-dir`:
+Then install desired plugins via `/plugins` TUI, or directly via command:
 
 ```bash
-git clone https://github.com/mocha/ai.git
-claude --plugin-dir ./ai
+/plugin install <plugin-name>@mocha-ai
 ```
 
-This loads the plugin from your working directory for that session. Changes you make to skill files take effect after running `/reload-plugins` — no reinstall needed.
+---
 
-## Usage
+## [`skylark`](plugins/skylark/README.md) _(workflow v3 - Current)_
 
-```bash
-# Single expert review
-/expert:solo-review path/to/document.md
+Skylark is a semi-autonomous agentic development pipeline featuring a detailed workflow that self-adjusts complexity based on the risk of the task at hand. This attempts to ensure high-quality output when performing high-risk work, but gracefully removes gates to maximize speed and token-efficiency when working on low-risk items.
 
-# Multi-perspective panel review
-/expert:panel-review path/to/document.md
+| Command | Purpose |
+|---|---|
+| `/skylark:implement <input>` | Single entry point — classifies input and routes through the pipeline |
+| `/skylark:brainstorm` | Socratic design conversation, produces a spec |
+| `/skylark:finish` | Close out a branch — verify, merge/PR/keep/discard, cleanup |
+| `/skylark:panel-review <doc>` | Multi-expert parallel review of any document |
+| `/skylark:solo-review <doc>` | Single expert review of any document |
 
-# Harden a spec through iterative review
-/expert:spec-review path/to/SPEC.md
+> _**Notes:** This approach builds on what I learned from the [experts](plugins/experts/README.md) skill, using vocabulary routing to tailor the context window of each agent upon invocation, and reimagines (and vastly expands!) the development pipeline which was previously being managed by multiple agents in [triad](plugins/triad/README.md) and reworks it into a single thread to simplify communication._
 
-# Decompose a plan and review each task
-/expert:plan-review path/to/PLAN.md
+---
 
-# Develop a single task with a fresh expert
-/expert:develop path/to/TASK.md
+### `reflect`
 
-# Full pipeline from spec to PR
-/expert:implement path/to/SPEC.md
-```
+Claude's Insights tool is incredibly useful for helping you understand your own journey as you start to explore more complex usage. It helps you spot areas where you are potentially missing out on using advanced features and provides pointers on how to improve things that are already going well.
 
-## How the Methodology Works
+| Command | Purpose |
+|---|---|
+| `/reflect:self-reflection [window]` | Date-scoped usage report in the style of built-in `/insights` |
 
-The expert generation process follows six principles from the [Forge Methodology](https://github.com/jdforsythe/forge/blob/main/METHODOLOGY.md):
+> _**Notes:** It achieves this by evaluating the stored history in your local Claude instance and applying a complex set of prompts to analyze that data. However, because of how it is constructed, you are unable to modify it or request changes to that analysis. For example, if you wanted to perform that analysis only against the previous 24 hours, it would be impossible._
+>
+> _By turning this feature into a /skill+script it becomes much more accessible and hackable for those inclined to tinker._
 
-1. **Vocabulary Routing** — precise terms activate domain knowledge clusters; generic language activates shallow ones
-2. **Real-World Roles** — brief identities (<50 tokens) with real job titles outperform elaborate personas
-3. **Anti-Pattern Watchlists** — named failure modes steer output away from the distribution center (generic output)
-4. **Progressive Disclosure** — identity first (primacy), vocabulary second (routing), anti-patterns third (steering)
-5. **Structured Artifacts** — experts produce typed deliverables (Strengths/Issues/Missing/Verdict), not free-form prose
-6. **Scaling Laws** — single expert for most tasks; panel only when the document genuinely spans multiple domains
+---
 
-## Project Structure
+### `llmstxt`
 
-```
-ai/
-├── .claude-plugin/
-│   ├── plugin.json            # Plugin manifest
-│   └── marketplace.json       # Marketplace catalog
-├── skills/
-│   ├── _shared/               # Internal methodology (not a skill)
-│   │   ├── expert-prompt-generator.md
-│   │   ├── vocabulary-guide.md
-│   │   └── prompt-template.md
-│   ├── solo-review/           # Building block: single expert review
-│   │   └── SKILL.md
-│   ├── panel-review/          # Building block: multi-expert panel
-│   │   └── SKILL.md
-│   ├── spec-review/           # Flow: iterative spec approval
-│   │   └── SKILL.md
-│   ├── plan-review/           # Flow: plan decomposition + task review
-│   │   └── SKILL.md
-│   ├── develop/               # Flow: per-task expert development
-│   │   └── SKILL.md
-│   └── implement/             # Orchestrator: full pipeline
-│       └── SKILL.md
-├── LICENSE
-└── README.md
-```
+| Command | Purpose |
+|---|---|
+| `/llmstxt:update [path]` | Scan for stale `llms.txt` nav files and regenerate them bottom-up (`--dry-run` to preview) |
 
-## License
+---
 
-MIT
+# Retired plugins:
+
+_These are no longer directly installable through the plugin, but they are included for manual use if you are interested in remixing them for your own purposes. EVERYTHING here is "use at your own risk," but the stuff below doubly-so._
+
+
+## `experts` _(workflow v2)_
+
+This model is a single-threaded flow that utilizes the techniques described in Forge to handle creation, quoting, and vocabulary routing. It also employs domain expert techniques to create customized prompts for each individual step in the task.
+
+| Command | Purpose |
+|---|---|
+| `/expert:solo-review <doc>` | Single bespoke expert reviews a document |
+| `/expert:panel-review <doc>` | 2-5 specialized experts review in parallel |
+| `/expert:spec-review <SPEC>` | Iterative spec review with fix-and-re-review loop |
+| `/expert:plan-review <PLAN>` | Decompose a plan into tasks, review each in isolation |
+| `/expert:develop <TASK>` | Fresh expert executes a single task in a worktree |
+| `/expert:implement <SPEC>` | Full pipeline: spec-review → plan → plan-review → per-task develop |
+
+> _**Notes:** While this approach was quite effective and able to work through small and well-considered tasks well, it eventually needed to be expanded into a more robust workflow infrastructure to allow it to handle a wider range of options. This served as a good testbed, however, I quickly abandoned it in favor of `skylark`, which greatly elaborates on the idea._
+
+---
+
+### `triad` _(workflow v1)_
+
+My original workflow uses TMUX sessions and multiple panes or windows to hold these three independent agents, which can then communicate with each other through the file system, effectively emailing each other with little purpose-built files. A file watcher triggers a "send keys" event to alert them of new messages, allowing rapid, observable, sychronous communication and collaboration between agents.
+
+Agents follow a strict workflow that defines the artifacts they trade between each step, keeping them tightly on-rails and making their process repeatable and able to be iteratively improved.
+
+| Command | Purpose |
+|---|---|
+| `/triad:start <org/repo> <path>` | Create tmux session, launch PM/PgM/EM agents |
+| `/triad:kick <org/repo> [agent]` | Restart crashed or stuck agent(s) |
+| `/triad:status <org/repo>` | Capture state of all panes and inboxes |
+| `/triad:resume <org/repo>` | Reconnect to an existing session, verify agents |
+
+> _**Notes:** Because of the nature of their communication protocol, usage of this workflow feels like reading the email threads of an ultra-idealized version of a dev team that only communicate in formal memos. It was bizarre and sometimes hilarious._
+>
+> _In practice, it regularly had communication breakdowns where one agent would not correctly interpret the signal that it was its turn to reply, or the file watcher would fire at a time when the Claude CLI didn't pick it up appropriately, etc. ... so to keep it autonomous, I ended up needing to add a **fourth** agent in another session, which could then monitor those Tmux sessions from the first three, and prod them along as things were falling._

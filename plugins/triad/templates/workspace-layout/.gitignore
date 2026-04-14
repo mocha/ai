@@ -1,0 +1,14 @@
+# ── deuleyville-toolkit: Mode 1 orchestration ─────────────────
+# Parent agent profile (machine-local, per-user customization)
+/profile.md
+
+# Inbox read cursors (ephemeral runtime state)
+/docs/inbox/.cursors/*
+!/docs/inbox/.cursors/.gitkeep
+
+# Onboarding handoff prompt (transient artifact, later plans)
+/.onboarding.md
+
+# Pending-for-user status file written by the watcher (Plan 2)
+/docs/inbox/.pending-user
+# ──────────────────────────────────────────────────────────────

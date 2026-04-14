@@ -1,0 +1,18 @@
+{
+  "name": "skylark",
+  "version": "0.1.0",
+  "description": "Skylark development workflow — vocabulary-routed expert pipeline with risk-proportional gating, Linear integration, and artifact provenance",
+  "author": {
+    "name": "Mocha",
+    "url": "https://github.com/mocha/skylark-flow"
+  },
+  "homepage": "https://github.com/mocha/ai/plugins/skylark/README.md",
+  "keywords": [
+    "agentic workflow",
+    "autonomous workflow",
+    "expert-review",
+    "vocabulary-routing",
+    "spec-review",
+    "implementation-pipeline"
+  ]
+}

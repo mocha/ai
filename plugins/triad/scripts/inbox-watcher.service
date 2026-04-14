@@ -1,0 +1,36 @@
+# inbox-watcher.service — systemd user service template for the inbox watcher.
+#
+# This is a template unit (note the @.service naming convention when installed).
+# The instance name (%i) is used as the agent name.
+#
+# Installation:
+#   1. Copy this file to ~/.config/systemd/user/inbox-watcher@.service
+#   2. Edit ExecStart to point to your actual paths
+#   3. Enable and start for a specific agent:
+#        systemctl --user enable inbox-watcher@engineering-manager
+#        systemctl --user start inbox-watcher@engineering-manager
+#   4. Check status:
+#        systemctl --user status inbox-watcher@engineering-manager
+#   5. View logs:
+#        journalctl --user -u inbox-watcher@engineering-manager
+#
+# The %i variable is replaced with the instance name (the part after @).
+# For example, inbox-watcher@engineering-manager.service sets %i to
+# "engineering-manager".
+
+[Unit]
+Description=Inbox watcher for agent %i
+After=default.target
+
+[Service]
+Type=simple
+# Update these paths for your environment:
+#   Arg 1: project root
+#   Arg 2: agent name (uses %i from the instance)
+#   Arg 3: tmux session name
+ExecStart=/path/to/ai-toolkit/scripts/inbox-watcher.sh /path/to/project %i main
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

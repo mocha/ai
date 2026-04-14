@@ -5,16 +5,30 @@
     "email": "patrick@deuley.ltd"
   },
   "metadata": {
-    "description": "Vocabulary-routed expert reviews building on the jdforsythe/forge methodology",
-    "version": "0.1.0"
+    "description": "Mocha's AI toolbox",
+    "version": "0.2.0"
   },
   "plugins": [
     {
-      "name": "experts",
-      "source": "./",
+      "name": "reflect",
+      "source": "./plugins/reflect",
       "version": "0.1.0",
-      "description": "Generate bespoke domain experts on-the-fly for reviews and development. Precise terminology activates deep knowledge clusters, catching domain-specific issues generic reviewers miss.",
-      "tags": ["review", "expert", "vocabulary-routing", "code-review", "spec-review"]
+      "description": "Date-scoped fork of the built-in /insights command. Generate the same eight-section report bounded to a window (last 24h, this week, etc.) instead of the full month.",
+      "tags": ["insights", "reflection", "usage-analysis", "retrospective"]
+    },
+    {
+      "name": "skylark",
+      "source": "./plugins/skylark",
+      "version": "0.2.0",
+      "description": "Autonomous development pipeline — vocabulary-routed expert panels with risk-proportional gating, Linear integration, and artifact provenance. Single /skylark:implement entry point routes any input (issue, spec, bug report, idea) through triage, prepare, spec-review, write-plan, plan-review, develop, and finish.",
+      "tags": ["agentic-workflow", "autonomous-workflow", "expert-review", "vocabulary-routing", "implementation-pipeline"]
+    },
+    {
+      "name": "llmstxt",
+      "source": "./plugins/llmstxt",
+      "version": "0.1.0",
+      "description": "Create and maintain llms.txt navigation files across large content vaults. Agent-first directory maps that cut traversal tokens in deep knowledge bases, following the llmstxt.org convention.",
+      "tags": ["llmstxt", "navigation", "vault", "knowledge-base", "obsidian"]
     }
   ]
 }

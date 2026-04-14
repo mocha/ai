@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.deuleyville.inbox-watcher.plist — launchd template for the inbox watcher.
+
+  Installation:
+    1. Copy this file to ~/Library/LaunchAgents/
+    2. Rename for each agent, e.g.:
+         com.deuleyville.inbox-watcher.engineering-manager.plist
+    3. Update ProgramArguments with your actual paths:
+         - Path to inbox-watcher.sh
+         - Path to your project root
+         - Agent name (e.g. engineering-manager)
+         - tmux session name
+    4. Load the agent:
+         launchctl load ~/Library/LaunchAgents/com.deuleyville.inbox-watcher.engineering-manager.plist
+    5. Unload with:
+         launchctl unload ~/Library/LaunchAgents/com.deuleyville.inbox-watcher.engineering-manager.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.deuleyville.inbox-watcher</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/path/to/ai-toolkit/scripts/inbox-watcher.sh</string>
+    <string>/path/to/project</string>
+    <string>AGENT_NAME</string>
+    <string>TMUX_SESSION_NAME</string>
+  </array>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/inbox-watcher.out</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/inbox-watcher.err</string>
+</dict>
+</plist>

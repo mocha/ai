@@ -1,0 +1,17 @@
+{
+  "name": "llmstxt",
+  "description": "Create and maintain llms.txt navigation files across large content vaults. Cheap, agent-first directory nav following the llmstxt.org convention — stays out of sight of human-facing tools like Obsidian.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Patrick Deuley"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/mocha/ai/plugins/llmstxt/README.md",
+  "keywords": [
+    "llmstxt",
+    "navigation",
+    "vault",
+    "obsidian",
+    "knowledge-base"
+  ]
+}

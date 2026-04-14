@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(git init:*)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "allowWrite": [
+        "/Users/deuley/code"
+      ]
+    },
+    "excludedCommands": [
+      "git push",
+      "git commit"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "triad",
+  "description": "Retired experiment — three-agent (PM / PgM / EM) autonomous development framework coordinating via file-based inbox messaging over tmux. Preserved for posterity and analysis.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Patrick Deuley"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/mocha/ai/plugins/triad/README.md",
+  "keywords": [
+    "agent-triad",
+    "multi-agent",
+    "autonomous-workflow",
+    "tmux",
+    "historical"
+  ]
+}
