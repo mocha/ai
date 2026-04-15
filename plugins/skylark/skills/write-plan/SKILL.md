@@ -11,7 +11,7 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
+**Save plans to:** `docs/plans/PLAN-NNN-<slug>.md`
 
 ## Scope Check
 
@@ -43,11 +43,12 @@ This structure informs the task decomposition. Each task should produce self-con
 
 ```markdown
 ---
+id: PLAN-NNN
 title: [Feature Name] Implementation Plan
 type: plan
 status: draft
-issue: ENG-XXX
-parent: docs/specs/YYYY-MM-DD-slug-design.md
+external_ref: ""
+parent: docs/specs/SPEC-NNN-slug.md
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 ---
@@ -118,7 +119,7 @@ Expected: PASS
 
 ```bash
 git add tests/path/test.ts src/path/file.ts
-git commit -m "feat(ENG-XXX): add specific feature"
+git commit -m "feat(TASK-NNN): add specific feature"
 ```
 ````
 
@@ -161,14 +162,13 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 ## Save and Report
 
-Save the plan to `docs/plans/YYYY-MM-DD-<feature-name>.md` with frontmatter per `_shared/artifact-conventions.md`. Commit to git.
+Allocate the next `PLAN-NNN` ID per `_shared/artifact-conventions.md`. Save the plan to `docs/plans/PLAN-NNN-<slug>.md` with frontmatter. Commit to git.
 
-Post Linear comment per `linear/SKILL.md`:
+Include a Changelog section at the bottom of the plan:
 ```
-[PLAN] Implementation plan written with [N] tasks.
-Plan: docs/plans/YYYY-MM-DD-slug.md
-Tasks: [brief list of task titles]
-Next: plan-review (decompose and review each task)
+## Changelog
+
+- **YYYY-MM-DD HH:MM** — [PLAN] Created with N tasks. Domains: [list]. Next: plan-review.
 ```
 
 ## Hand Off
@@ -179,7 +179,8 @@ After saving the plan:
 
 Return:
 ```
-plan_path: docs/plans/YYYY-MM-DD-slug.md
+plan_id: PLAN-NNN
+plan_path: docs/plans/PLAN-NNN-slug.md
 task_count: N
 domains: [list of domain clusters across tasks]
 ```

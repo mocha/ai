@@ -51,7 +51,10 @@ Wait for the synthesized verdict.
 
 **Ship** → Spec approved.
 - Update spec frontmatter: `status: approved`
-- Post Linear comment: `[SPEC-REVIEW] Approved (round 1). Report: [path]`
+- Append changelog entry to the spec:
+  ```
+  - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Approved (round 1). Report: docs/reports/R-YYYYMMDD-synthesis.md.
+  ```
 - Return to implement — next stage is PLAN.
 
 **Revise** → Fix and re-review.
@@ -60,12 +63,19 @@ Wait for the synthesized verdict.
 - Get user approval on proposed fixes
 - Apply fixes to the spec
 - Update spec frontmatter: `updated: [today]`
+- Append changelog entry:
+  ```
+  - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Round 1: revise. Revised per findings.
+  ```
 - Proceed to Round 2.
 
 **Rethink** → Stop.
 - Present fundamental concerns to user
 - Do NOT iterate — the spec needs significant rework
-- Post Linear comment: `[SPEC-REVIEW] Rethink recommended. Report: [path]`
+- Append changelog entry:
+  ```
+  - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Rethink recommended. Report: docs/reports/R-YYYYMMDD-synthesis.md.
+  ```
 - Return to implement with `rethink` status — implement will stop and surface to user.
 
 ### 5: Round 2 — Re-Review
@@ -79,13 +89,19 @@ Invoke `/skylark:panel-review` again with:
 
 **Ship** → Spec approved.
 - Update spec frontmatter: `status: approved`
-- Post Linear comment: `[SPEC-REVIEW] Approved (round 2). Report: [path]`
+- Append changelog entry:
+  ```
+  - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Approved (round 2). Report: docs/reports/R-YYYYMMDD-synthesis.md.
+  ```
 - Return to implement.
 
 **Revise or Rethink** → Escalate.
 - Maximum rounds reached. Do NOT run a third round.
 - Present remaining issues to user with full context
-- Post Linear comment: `[SPEC-REVIEW] Escalated after round 2. [N] blocking issues remain. Report: [path]`
+- Append changelog entry:
+  ```
+  - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Escalated after round 2. N blocking issues remain.
+  ```
 - Return to implement with `escalate` status — implement will stop and let the user decide.
 
 ## Output

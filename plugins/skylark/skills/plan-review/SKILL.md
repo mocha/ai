@@ -21,15 +21,16 @@ Read the plan fully. Identify all tasks, their dependencies, domains, and scope.
 
 ### 2: Extract Task Specs
 
-For each task in the plan, create an individual task spec file at `docs/tasks/YYYY-MM-DD-<slug>-task-NN.md`:
+For each task in the plan, allocate the next `TASK-NNN` ID per `_shared/artifact-conventions.md` and create an individual task spec file at `docs/tasks/TASK-NNN-<slug>.md`:
 
 ```yaml
 ---
+id: TASK-NNN
 title: [Task Title]
 type: task
 status: pending
-issue: ENG-XXX
-parent: docs/plans/YYYY-MM-DD-slug.md
+external_ref: ""
+parent: docs/plans/PLAN-NNN-slug.md
 task_number: N
 depends_on: []
 domain: [primary domain cluster]
@@ -44,11 +45,12 @@ Body includes:
 - **Acceptance criteria** — concrete, testable (traced from plan steps)
 - **Key considerations** — domain concerns, edge cases, testing approach
 - **Steps** — the ordered steps from the plan, with code and verification
+- **Changelog** — with creation event
 
 Each task must be:
 - **Self-contained** — can be implemented and tested independently
 - **Scoped** — clear boundaries, acceptance criteria, single domain
-- **Ordered** — explicit dependencies on other tasks
+- **Ordered** — explicit dependencies on other tasks (using task IDs)
 
 **Present the full decomposition to the user for approval before review.** Adjust if requested.
 
@@ -73,7 +75,7 @@ For each task spec, invoke `/skylark:panel-review` with:
 
 ### 5: Handle Verdicts Per Task
 
-**Ship** → Task spec approved. Update frontmatter: `status: approved`. Move on.
+**Ship** → Task spec approved. Update frontmatter: `status: approved`. Append changelog entry. Move on.
 
 **Revise** → Apply fixes to the task spec, re-invoke `/skylark:panel-review` (max 2 rounds per task). If still failing after round 2, flag to user but continue reviewing other tasks.
 
@@ -81,12 +83,9 @@ For each task spec, invoke `/skylark:panel-review` with:
 
 ### 6: Report Results
 
-Post Linear comment:
+Append changelog entry to the plan:
 ```
-[PLAN-REVIEW] Decomposed into [N] tasks.
-Approved: [count] | Needs revision: [count] | Blocked: [count]
-Tasks: docs/tasks/YYYY-MM-DD-slug-task-01.md ... task-NN.md
-Next: develop (sequential execution of approved tasks)
+- **YYYY-MM-DD HH:MM** — [PLAN-REVIEW] Decomposed into N tasks. Approved: N. Needs revision: N. Blocked: N. Tasks: TASK-NNN through TASK-NNN.
 ```
 
 ### 7: Return to Implement
@@ -94,16 +93,18 @@ Next: develop (sequential execution of approved tasks)
 Return:
 ```
 tasks:
-  - path: docs/tasks/...-task-01.md
+  - id: TASK-NNN
+    path: docs/tasks/TASK-NNN-slug.md
     status: approved | needs-revision | blocked
     domain: database
     depends_on: []
-  - path: docs/tasks/...-task-02.md
+  - id: TASK-NNN
+    path: docs/tasks/TASK-NNN-slug.md
     status: approved
     domain: api
-    depends_on: [task-01]
+    depends_on: [TASK-NNN]
   ...
-recommended_order: [task-01, task-02, ...]
+recommended_order: [TASK-NNN, TASK-NNN, ...]
 blocked_tasks: [list, if any]
 ```
 

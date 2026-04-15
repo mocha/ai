@@ -27,7 +27,7 @@ Read the task spec fully. Also read:
 - Referenced files (existing code, architecture specs)
 - Parent plan (for broader context)
 - Parent spec (for design intent)
-- Sub-repo CLAUDE.md (for conventions and stack)
+- Project CLAUDE.md (for conventions and stack)
 
 **Extract the full task text now.** The subagent receives the full text inline — do NOT make the subagent read the plan or task file. You curate exactly what context is needed.
 
@@ -72,7 +72,9 @@ Create an isolated worktree for this task:
 git worktree add <worktree-path> -b <task-branch-name>
 ```
 
-Branch naming: `task/<issue-id>-task-<NN>-<slug>` (e.g., `task/eng-142-task-01-schema-migration`)
+Branch naming: `task/<task-id>-<slug>` (e.g., `task/TASK-012-schema-migration`)
+
+If the task has an `external_ref`, include it: `task/TASK-012-eng-142-schema-migration`
 
 ### Step 4: Select Model
 
@@ -120,7 +122,7 @@ Once you're clear on requirements:
 1. Implement exactly what the task specifies
 2. Write tests (following TDD — write failing test first)
 3. Verify implementation works
-4. Commit your work with a message referencing the issue ID
+4. Commit your work with a message referencing the task ID
 5. Self-review (see below)
 6. Report back
 
@@ -293,7 +295,10 @@ In addition to standard code quality concerns, the panel should check:
 
 **Ship** → Task complete.
 - Update task frontmatter: `status: complete`
-- Post Linear comment: `[DEVELOP] Task [N/total] complete. Tests pass. Branch: [name]`
+- Append changelog entry to the task:
+  ```
+  - **YYYY-MM-DD HH:MM** — [DEVELOP] Task complete. Tests pass. Branch: task/TASK-NNN-slug.
+  ```
 - Return to implement for merge and next task.
 
 **Revise (round < 2)** → Fix and re-review.
@@ -305,7 +310,10 @@ In addition to standard code quality concerns, the panel should check:
 
 **Revise (round 2) or Rethink** → Escalate.
 - Present unresolved findings to user
-- Post Linear comment: `[DEVELOP] Task [N] escalated after review round 2. [N] issues remain.`
+- Append changelog entry to the task:
+  ```
+  - **YYYY-MM-DD HH:MM** — [DEVELOP] Escalated after review round 2. N issues remain.
+  ```
 - Return to implement with `escalate` status
 
 ### Step 10: Return to Implement
@@ -313,6 +321,7 @@ In addition to standard code quality concerns, the panel should check:
 Return:
 ```
 status: complete | escalate | blocked
+task_id: TASK-NNN
 task_path: docs/tasks/...-task-NN.md
 worktree_path: <path>
 branch: <branch-name>

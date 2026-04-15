@@ -109,8 +109,7 @@ When the expert returns, show the user:
 - **Next steps:** Offer to dispatch a different expert perspective, run a
   full panel review via `/skylark:panel-review`, or address specific findings
 
-If there is an associated Linear issue, post a comment with the verdict
-and report path.
+If the reviewed artifact has a changelog section, append a review event entry.
 
 ## What This Skill Does NOT Do
 

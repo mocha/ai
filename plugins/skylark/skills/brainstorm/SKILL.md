@@ -21,12 +21,12 @@ Every project goes through this process. A todo list, a single-function utility,
 
 You MUST create a task for each of these items and complete them in order:
 
-1. **Explore project context** — check files, docs, recent commits, search Linear for prior art
+1. **Explore project context** — check files, docs, recent commits, search existing artifacts for prior art
 2. **Assess scope** — is this too large for a single spec? If it spans multiple independent subsystems, decompose before asking detailed questions.
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to complexity, get user approval after each section
-6. **Write design doc** — save to `docs/specs/YYYY-MM-DD-<topic>-design.md` with frontmatter, commit to git
+6. **Write design doc** — save to `docs/specs/SPEC-NNN-<slug>.md` with frontmatter per `_shared/artifact-conventions.md`, commit to git
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
 9. **Hand off** — return to `/skylark:implement` pipeline (next stage: spec-review) or suggest the user invoke it
@@ -36,7 +36,7 @@ You MUST create a task for each of these items and complete them in order:
 ```dot
 digraph brainstorming {
     "Explore project context" [shape=box];
-    "Search Linear for prior art" [shape=box];
+    "Search existing artifacts" [shape=box];
     "Scope too large?" [shape=diamond];
     "Decompose into sub-projects" [shape=box];
     "Ask clarifying questions" [shape=box];
@@ -48,8 +48,8 @@ digraph brainstorming {
     "User reviews spec?" [shape=diamond];
     "Hand off to pipeline" [shape=doublecircle];
 
-    "Explore project context" -> "Search Linear for prior art";
-    "Search Linear for prior art" -> "Scope too large?";
+    "Explore project context" -> "Search existing artifacts";
+    "Search existing artifacts" -> "Scope too large?";
     "Scope too large?" -> "Decompose into sub-projects" [label="yes"];
     "Decompose into sub-projects" -> "Ask clarifying questions" [label="brainstorm first sub-project"];
     "Scope too large?" -> "Ask clarifying questions" [label="no"];
@@ -72,7 +72,7 @@ digraph brainstorming {
 **Understanding the idea:**
 
 - Check out the current project state first (files, docs, recent commits)
-- Search Linear for existing issues or specs in this area (per `linear/SKILL.md`) — don't create duplicate work
+- Search `docs/specs/`, `docs/plans/`, `docs/tasks/` for existing work in this area — don't create duplicate work
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
@@ -111,20 +111,23 @@ digraph brainstorming {
 
 **Documentation:**
 
-- Write the validated design (spec) to `docs/specs/YYYY-MM-DD-<topic>-design.md`
+- Allocate the next `SPEC-NNN` ID per `_shared/artifact-conventions.md`
+- Write the validated design (spec) to `docs/specs/SPEC-NNN-<slug>.md`
   - Use frontmatter per `_shared/artifact-conventions.md`:
     ```yaml
     ---
+    id: SPEC-NNN
     title: [Feature Name] Design Spec
     type: spec
     status: draft
-    issue: ENG-XXX
+    external_ref: ""
     parent: null
     created: YYYY-MM-DD
     updated: YYYY-MM-DD
     ---
     ```
   - Body structure: Context, Solution, Detailed Design, Acceptance Criteria, Out of Scope, Open Questions
+  - Include a Changelog section at the bottom with the creation event
 - Commit the design document to git
 
 **Spec Self-Review:**
@@ -150,11 +153,9 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 - If called by `/skylark:implement`, return control — implement routes to `/skylark:spec-review` next
 - If called standalone, suggest: "Spec approved. Run `/skylark:implement [spec path]` to start the review and implementation pipeline."
-- Post Linear comment per `linear/SKILL.md`:
+- Append changelog entry to the spec:
   ```
-  [BRAINSTORM] Design spec written and approved.
-  Spec: docs/specs/YYYY-MM-DD-slug-design.md
-  Next: spec-review
+  - **YYYY-MM-DD HH:MM** — [BRAINSTORM] Design spec written and approved. Next: spec-review.
   ```
 
 ## Key Principles

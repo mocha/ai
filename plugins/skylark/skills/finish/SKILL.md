@@ -1,13 +1,13 @@
 ---
 name: finish
-description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work. Guides completion by verifying tests, presenting structured options (merge/PR/keep/discard), updating Linear, writing session notes, checking architecture docs, cleaning up worktrees, and recommending next work. The closing ceremony that ensures nothing is left dangling.
+description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work. Guides completion by verifying tests, presenting structured options (merge/PR/keep/discard), updating artifact status, writing session notes, checking architecture docs, cleaning up worktrees, and recommending next work. The closing ceremony that ensures nothing is left dangling.
 ---
 
 # Finishing Development Work
 
-Guide completion of development work by presenting clear options and handling the chosen workflow, then closing the loop on Linear, documentation, and cleanup.
+Guide completion of development work by presenting clear options and handling the chosen workflow, then closing the loop on documentation and cleanup.
 
-**Core principle:** Verify tests → Verify ACs → Present options → Execute choice → Linear → Session notes → Architecture check → Clean up → Recommend next.
+**Core principle:** Verify tests → Verify ACs → Present options → Execute choice → Update artifacts → Session notes → Architecture check → Clean up → Recommend next.
 
 **Announce at start:** "I'm using the finish skill to complete this work."
 
@@ -30,7 +30,7 @@ Guide completion of development work by presenting clear options and handling th
 
 ```bash
 # Run project's test suite
-pnpm test  # or whatever the sub-repo CLAUDE.md specifies
+pnpm test  # or whatever the project's CLAUDE.md specifies
 ```
 
 **If tests fail:**
@@ -48,7 +48,7 @@ Stop. Don't proceed to Step 2.
 
 ### Step 2: Verify Acceptance Criteria
 
-Walk each AC from the issue or spec against the implementation:
+Walk each AC from the spec or task against the implementation:
 - **Met** — AC is satisfied, point to the code/test that proves it
 - **Deviated** — implemented differently than specified, document why
 - **Not met** — AC was not addressed, flag it
@@ -100,7 +100,7 @@ pnpm test
 git branch -d <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 9)
+Then: Cleanup worktree (Step 8)
 
 #### Option 2: Push and Create PR
 
@@ -121,13 +121,13 @@ EOF
 )"
 ```
 
-Then: Cleanup worktree (Step 9) — **but keep the branch** since PR is open.
+Then: Cleanup worktree (Step 8) — **but keep the branch** since PR is open.
 
 #### Option 3: Keep As-Is
 
 Report: "Keeping branch `<name>`. Worktree preserved at `<path>`."
 
-**Don't cleanup worktree.** Skip to Step 6 (Linear).
+**Don't cleanup worktree.** Skip to Step 6 (Session notes).
 
 #### Option 4: Discard
 
@@ -149,40 +149,48 @@ git checkout <base-branch>
 git branch -D <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 9)
+Then: Cleanup worktree (Step 8)
 
-### Step 6: Update Linear
+### Step 6: Update Artifact Status and Changelog
 
-If a Linear issue is associated:
-- Move issue to **Done** (Options 1, 2) or leave as-is (Options 3, 4)
-- Post closing comment:
-  ```
-  [FINISH] Complete.
-  PR: [link] (if Option 2)
-  Merged: locally (if Option 1)
-  Kept: branch [name] (if Option 3)
-  Discarded (if Option 4)
+For each artifact associated with this work (specs, plans, tasks):
 
-  ACs: [met/deviated/not-met summary]
-  Deviations: [brief notes on any deviations from plan]
+**On completion (Options 1, 2):**
+- Update frontmatter: `status: complete`, `updated: YYYY-MM-DD`
+- Append changelog entry:
   ```
-- Comment on related/blocked issues with relevant context:
+  - **YYYY-MM-DD HH:MM** — [FINISH] Complete. [Merged locally | PR: #NNN | Kept: branch-name | Discarded].
   ```
-  [CONTEXT] ENG-XXX is now complete.
-  Relevant for this issue: [brief note about what changed or gotchas]
+
+**On discard (Option 4):**
+- Update frontmatter: `status: draft`, `updated: YYYY-MM-DD`
+- Append changelog entry:
   ```
+  - **YYYY-MM-DD HH:MM** — [FINISH] Discarded. Work deleted per user request.
+  ```
+
+**On keep (Option 3):**
+- Leave frontmatter as-is
+- Append changelog entry:
+  ```
+  - **YYYY-MM-DD HH:MM** — [FINISH] Branch kept: <name>. Worktree: <path>.
+  ```
+
+Include AC summary (met/deviated/not-met) and any deviations from plan in the changelog entry.
 
 ### Step 7: Write Session Notes
 
-For standard+ risk work, create `docs/notes/YYYY-MM-DD-<slug>.md`:
+For standard+ risk work, allocate the next `NOTE-NNN` ID and create `docs/notes/NOTE-NNN-<slug>.md`:
 
 ```yaml
 ---
-title: Session Notes — [issue/feature title]
+id: NOTE-NNN
+title: Session Notes — [feature title]
 type: notes
-issue: ENG-XXX
-parent: docs/specs/... or issue ID
+external_ref: ""
+parent: docs/specs/... or docs/plans/...
 created: YYYY-MM-DD
+updated: YYYY-MM-DD
 ---
 ```
 
@@ -228,18 +236,18 @@ git status  # Verify clean tree
 ### Step 10: Recommend Next
 
 Suggest 1-2 candidates for next work:
-- Issues newly unblocked by this completion (check blocking relations in Linear)
+- Related artifacts — specs or tasks that depend on or are unblocked by this completion
 - Same-project siblings (other tasks in the same plan)
-- Backlog top (highest priority unstarted issue)
+- Other pending tasks in `docs/tasks/` with `status: pending`
 
 ## Quick Reference
 
-| Option | Merge | Push | PR | Keep Worktree | Delete Branch | Linear Status |
-|--------|-------|------|----|--------------|---------------|---------------|
-| 1. Merge locally | yes | no | no | no | yes (safe) | Done |
-| 2. Create PR | no | yes | yes | no | no | Done |
-| 3. Keep as-is | no | no | no | yes | no | In Progress |
-| 4. Discard | no | no | no | no | yes (force) | — |
+| Option | Merge | Push | PR | Keep Worktree | Delete Branch | Artifact Status |
+|--------|-------|------|----|--------------|---------------|-----------------|
+| 1. Merge locally | yes | no | no | no | yes (safe) | complete |
+| 2. Create PR | no | yes | yes | no | no | complete |
+| 3. Keep as-is | no | no | no | yes | no | unchanged |
+| 4. Discard | no | no | no | no | yes (force) | draft |
 
 ## Common Mistakes
 
@@ -259,9 +267,9 @@ Suggest 1-2 candidates for next work:
 - **Problem:** Accidentally delete work
 - **Fix:** Require typed "discard" confirmation, show exactly what will be lost
 
-**Skipping Linear updates**
-- **Problem:** Issue left in wrong state, blocked issues never notified
-- **Fix:** Always update Linear status and comment on related issues
+**Skipping artifact updates**
+- **Problem:** Artifacts left in wrong state, dependent work can't detect completion
+- **Fix:** Always update artifact frontmatter and append changelog entry
 
 **Skipping session notes**
 - **Problem:** Decisions and discoveries lost across session boundaries
@@ -274,7 +282,7 @@ Suggest 1-2 candidates for next work:
 - Merge without verifying tests on the merged result
 - Delete work without typed confirmation showing what will be lost
 - Force-push without explicit user request
-- Skip Linear updates when an issue exists
+- Skip artifact status updates when artifacts exist
 - Skip session notes for elevated+ work
 
 **Always:**
@@ -282,5 +290,5 @@ Suggest 1-2 candidates for next work:
 - Present exactly 4 options, concisely
 - Get typed confirmation for Option 4
 - Clean up worktree appropriately per option
-- Post Linear closing comment with AC summary
+- Update artifact changelog with completion event
 - Recommend next work

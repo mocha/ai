@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Use when starting any development work — issues, specs, plans, tasks, ideas, or bug reports. Single entry point that classifies input, determines risk level, and routes through the appropriate pipeline stages. Handles everything from trivial bugfixes (direct to develop) to critical architectural changes (full spec-review, plan, panel gates). Tracks progress across tasks and manages worktree lifecycle.
+description: Use when starting any development work — file paths, specs, plans, tasks, ideas, or bug reports. Single entry point that classifies input, determines risk level, and routes through the appropriate pipeline stages. Handles everything from trivial bugfixes (direct to develop) to critical architectural changes (full spec-review, plan, panel gates). Tracks progress across tasks and manages worktree lifecycle.
 ---
 
 # Implement
@@ -9,8 +9,9 @@ The single orchestrator for all development work. Classifies input, routes to th
 
 ## When to Use
 
-- User says "implement this", "build this", "work on ENG-xxx", "fix this bug"
+- User says "implement this", "build this", "work on this", "fix this bug"
 - User provides a spec, plan, task spec, or idea to execute
+- User points at a file path containing notes, requirements, or a description
 - Anytime development work needs to start, regardless of scope
 
 ## The Pipeline
@@ -28,19 +29,20 @@ Most work skips most stages. Triage determines where to enter and which gates ar
 Invoke the `triage` skill (read `triage/SKILL.md`). It returns:
 
 ```
-type: issue | spec | plan | task | raw-idea | raw-problem
+type: spec | plan | task | raw-idea | raw-problem | raw-input | external-ref
 state: new | draft | reviewed | approved | decomposed | in-progress
 risk: trivial | standard | elevated | critical
 path: [ordered list of pipeline stages to run]
-issue_id: ENG-XXX (if applicable)
+artifact_id: SPEC-001 (if existing artifact found)
 artifact_path: docs/specs/... (if applicable)
+external_ref: ENG-142 (if applicable)
 decompose: true | false
 ```
 
 If `decompose` is true, handle decomposition before proceeding:
 - For specs: split into child specs, each enters the pipeline independently
 - For plans: split into sub-plans, each enters at plan-review independently
-- Create Linear sub-issues with blocking relations for each child
+- Create dependency relations between child artifacts
 
 ### Step 2: Walk the Pipeline
 
@@ -53,7 +55,7 @@ The stages and what they return:
 #### PREPARE (standard+ risk)
 Read and invoke `prepare/SKILL.md`.
 - Receives: triage classification, raw input
-- Returns: spec path (if created), references, vocabulary payload, risk confirmation
+- Returns: artifact path (if created), references, vocabulary payload, risk confirmation
 - If risk escalated during prepare, re-triage and adjust the pipeline path
 
 #### BRAINSTORM (feature-scale raw ideas only)
@@ -82,21 +84,45 @@ Read and invoke `plan-review/SKILL.md`.
 - If tasks are blocked: skip them and their dependents, proceed with approved tasks
 
 #### DEVELOP (always — the core execution stage)
-Read and invoke `develop/SKILL.md` for each task in dependency order.
 
 **For trivial risk (no task specs):**
+- Read and invoke `develop/SKILL.md`
 - Implement directly in the main working tree
 - No worktree, no vocabulary-routed expert, no panel review
 - Run tests, commit, proceed to FINISH
 
-**For standard risk (single task from prepared issue):**
+**For standard risk (single task from prepared input):**
+- Read and invoke `develop/SKILL.md`
 - Create one worktree
 - Generate vocabulary-routed expert developer
 - Implement, test, panel review (Sonnet, 1 round)
 - Merge worktree branch
 
 **For elevated+ risk (multiple tasks from plan):**
-- Execute tasks sequentially in dependency order
+
+When multiple approved tasks exist, present the execution choice:
+
+1. Check for `.muxrc` in the project root
+2. If `.muxrc` exists AND multiple independent task batches are possible,
+   present the hard gate:
+
+   > Multiple tasks ready for development. How would you like to proceed?
+   > 1. **Sequential** — execute tasks one at a time (current behavior)
+   > 2. **Parallel via Mux** — dispatch independent tasks concurrently (requires running Mux server)
+
+3. If `.muxrc` is absent OR only one task exists, skip the prompt and
+   proceed with sequential execution (no change in behavior)
+
+**If user chooses parallel:** Read and invoke `dispatch-with-mux/SKILL.md`
+with the full task list and dependency graph from plan-review. The dispatch
+skill handles worktree creation, parallel execution, reviews, and merging.
+When it returns, proceed directly to FINISH.
+
+If the dispatch skill returns `status: fallback` (Mux server unreachable),
+inform the user and proceed with sequential execution below.
+
+**If user chooses sequential (or `.muxrc` absent):**
+- Read and invoke `develop/SKILL.md` for each task in dependency order
 - One worktree per task, merged as each completes
 - Fresh vocabulary-routed expert per task
 - Panel review per task (model and rounds per risk matrix)
@@ -110,11 +136,11 @@ Read and invoke `develop/SKILL.md` for each task in dependency order.
 ```
 ## Progress: [N/total] tasks complete
 
-completed  Task 1: [title] — complete
-completed  Task 2: [title] — complete
-active     Task 3: [title] — in progress
-pending    Task 4: [title] — pending (depends on Task 3)
-skipped    Task 5: [title] — blocked (rethink verdict)
+completed  TASK-001: [title] — complete
+completed  TASK-002: [title] — complete
+active     TASK-003: [title] — in progress
+pending    TASK-004: [title] — pending (depends on TASK-003)
+skipped    TASK-005: [title] — blocked (rethink verdict)
 ```
 
 **If a task fails (blocked after max review rounds):**
@@ -127,8 +153,8 @@ User decides. Do not auto-skip.
 
 #### FINISH (always)
 Read and invoke `finish/SKILL.md`.
-- Receives: completed work, branch state, issue context
-- Handles: test verification, branch options, Linear updates, session notes, cleanup
+- Receives: completed work, branch state, artifact context
+- Handles: test verification, branch options, session notes, cleanup
 
 ### Step 3: Handle Scope Escalation
 
@@ -145,8 +171,7 @@ Never automatically restart the pipeline. Pause, explain, let the user decide.
 ### Step 4: Handle Interruptions
 
 If the session ends mid-pipeline:
-- All state is in artifacts (specs, plans, tasks, reports with frontmatter)
-- All events are in Linear comments
+- All state is in artifacts (specs, plans, tasks, reports with frontmatter and changelogs)
 - Next session: user runs `/skylark:implement` again with the same input
 - Triage detects state from artifacts and resumes at the correct stage
 

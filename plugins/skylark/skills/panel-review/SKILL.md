@@ -131,13 +131,9 @@ When all experts return, produce a structured synthesis:
 
 Save the synthesis report to `docs/reports/` following `_shared/artifact-conventions.md`.
 
-If there is an associated Linear issue, post a comment:
+Append a changelog entry to the reviewed artifact:
 ```
-[PANEL-REVIEW] Round N complete: [verdict]
-
-Panel: [expert 1 role], [expert 2 role], ...
-Blocking issues: [count]
-Report: docs/reports/R-YYYYMMDDHHMMSS-panel-synthesis.md
+- **YYYY-MM-DD HH:MM** — [PANEL-REVIEW] Round N: [verdict]. Panel: [expert roles]. Blocking: [count]. Report: docs/reports/R-YYYYMMDD-synthesis.md.
 ```
 
 Based on the verdict:
