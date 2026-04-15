@@ -8,7 +8,7 @@ implementation pipelines, and usage reflection.
 
 | Plugin | What it does |
 |---|---|
-| [**skylark**](plugins/skylark/README.md) | Workflow v2: An autonomous-agent development pipeline that routes "expert" agents through a robust and risk-aware development workflow. Moves through bugs fast but slow-and-steady through load-bearing changes. |
+| [**skylark**](plugins/skylark/README.md) | Workflow v3: An autonomous-agent development pipeline that routes "expert" agents through a robust and risk-aware development workflow. Moves through bugs fast but slow-and-steady through load-bearing changes. |
 | [**reflect**](plugins/reflect/README.md) | A reimagination of Claude's built-in `/insights` command, generating the same report but now using a hackable skill+script combo instead of hardcoded TS inside the harness. 😉 |
 | [**llmstxt**](plugins/llmstxt/README.md) | Create and maintain `llms.txt` navigation files across large content vaults and provide agent-first directory maps that cut traversal tokens in deep knowledge bases. |
 
