@@ -1,23 +1,36 @@
-# skylark
+# skylark-ai
 
-A Claude Code plugin encoding the _Skylark_ development pipeline. Designed for our [Linear](https://linear.app)-based workflow, but easy to remix to fit your own.
+A Claude Code plugin encoding the _Skylark_ development pipeline. Works with any codebase — no external work tracker required. All pipeline state lives in local artifacts (`docs/specs/`, `docs/plans/`, `docs/tasks/`), making the workflow portable and self-contained.
+
+For a detailed walkthrough of the pipeline with diagrams, stage descriptions, and gate activation tables, see **[WORKFLOW.md](WORKFLOW.md)**.
 
 ## What it does
 
-`skylark` provides a unified workflow that routes any development input — an issue, spec, plan, bug report, or raw idea — through the appropriate pipeline stages with risk-proportional gating at each step. Small fixes flow through fast. Load-bearing changes get detailed reviews at multiple gates to ensure high-quality output.
+`skylark` provides a unified workflow that routes any development input — a spec, plan, file path, bug report, or raw idea — through the appropriate pipeline stages with risk-proportional gating at each step. Small fixes flow through fast. Load-bearing changes get detailed reviews at multiple gates to ensure high-quality output.
 
 ```
-/skylark:implement ENG-142
-  → triage (classify, assess risk, detect state)
-  → prepare (enrich with Linear context, vocabulary, references)
+/skylark:implement path/to/notes.md
+  → triage (classify, assess risk, detect state from existing artifacts)
+  → prepare (enrich with vocabulary, references, sharpened ACs)
   → spec-review (panel review, max 2 rounds)
   → write-plan (no-placeholder implementation plan)
   → plan-review (decompose into tasks, review each)
   → develop (per-task vocabulary-routed expert in isolated worktree)
-  → finish (verify, branch options, Linear ceremony, session notes, cleanup)
+  → finish (verify, branch options, session notes, cleanup)
 ```
 
 The pipeline adapts based on the work itself. A trivial bugfix goes straight to `develop` and `finish`. A standard issue gets `prepare`, `develop`, and `finish`. Only elevated and critical work runs the full pipeline.
+
+## Artifacts as State
+
+All pipeline state lives in files with YAML frontmatter — not in agent memory and not in an external system. Each artifact has:
+
+- An **internal ID** (`SPEC-001`, `PLAN-001`, `TASK-001`) allocated sequentially
+- A **parent** field forming a provenance chain back to the original input
+- An **in-file changelog** serving as the audit trail
+- An optional **external_ref** for linking to external trackers (GitHub Issues, Jira, Linear, etc.)
+
+If a session crashes mid-pipeline, re-running `/skylark:implement` with the same input detects state from artifacts and resumes at the correct stage.
 
 ## Skills
 
@@ -36,12 +49,11 @@ The pipeline adapts based on the work itself. A trivial bugfix goes straight to 
 | Skill | Purpose |
 |-------|---------|
 | `triage` | Classify input type, detect state, assess risk, route |
-| `prepare` | Enrich with Linear context, vocabulary payload, references |
+| `prepare` | Enrich with vocabulary payload, references, sharpened ACs |
 | `spec-review` | Iterative panel review of spec (max 2 rounds) |
 | `write-plan` | Generate implementation plan from approved spec |
 | `plan-review` | Decompose plan into tasks, panel-review each |
 | `develop` | Per-task expert developer in isolated worktree |
-| `linear` | Linear interaction conventions |
 
 ### Shared methodology
 
@@ -50,7 +62,7 @@ The pipeline adapts based on the work itself. A trivial bugfix goes straight to 
 | `_shared/expert-prompt-generator.md` | 5-step process for creating vocabulary-routed experts |
 | `_shared/vocabulary-guide.md` | Domain term extraction, clustering, validation |
 | `_shared/prompt-template.md` | Output skeleton for expert prompts |
-| `_shared/artifact-conventions.md` | File naming, locations, frontmatter, provenance chains |
+| `_shared/artifact-conventions.md` | File naming, locations, frontmatter, provenance chains, changelog format |
 | `_shared/risk-matrix.md` | Risk levels and gate activation table |
 
 ## Key techniques
@@ -61,11 +73,47 @@ The pipeline adapts based on the work itself. A trivial bugfix goes straight to 
 
 **Two-stage implementation review** — after implementation, a spec compliance reviewer verifies the work matches the spec (deliberately distrustful: "do not trust the implementer's report"), then a vocabulary-routed panel reviews code quality. Three layers of validation catching different failure modes.
 
-**Artifact-based state** — all pipeline state lives in files with YAML frontmatter and provenance chains, not in agent memory. A session can crash and resume by detecting state from artifacts. Every pipeline event also gets a Linear comment for discoverability.
+**Artifact-based state** — all pipeline state lives in files with YAML frontmatter and provenance chains, not in agent memory. A session can crash and resume by detecting state from artifacts. Every pipeline event is recorded in the artifact's in-file changelog.
 
-## Installation
+## Install
 
-For installation, see the [marketplace README](../../README.md).
+### From marketplace
+
+Add the marketplace:
+```bash
+/plugin marketplace add mocha/skylark-flow
+```
+
+Then install the plugin:
+```bash
+/plugin install skylark@mocha-skylark-flow
+```
+
+### Local development
+
+Clone the repo and load it directly with `--plugin-dir`:
+
+```bash
+git clone https://github.com/mocha/skylark-flow.git
+claude --plugin-dir ./skylark-flow
+```
+
+This loads the plugin from your working directory for that session. Changes you make to skill files take effect after running `/reload-plugins` — no reinstall needed.
+
+To make the install persistent while still pointing at your local copy, install via the marketplace first, then replace the cached copy with a symlink:
+
+```bash
+# Install normally
+claude plugin install skylark@mocha-skylark-flow
+
+# Replace the cache with a symlink to your local clone
+rm -rf ~/.claude/plugins/cache/mocha-skylark-flow/skylark/0.2.0
+ln -s /path/to/skylark-flow ~/.claude/plugins/cache/mocha-skylark-flow/skylark/0.2.0
+```
+
+This way the plugin stays registered and enabled across sessions, but reads directly from your working directory.
+
+### Running alongside Superpowers
 
 Designed to run alongside [Superpowers](https://github.com/obra/superpowers). Superpowers provides discipline and technique skills (TDD, systematic debugging, verification-before-completion, git worktrees) that complement this plugin's workflow pipeline. Where skill names overlap, use the fully-qualified `/skylark:` prefix.
 
@@ -98,8 +146,8 @@ The shared methodology files in `_shared/` (expert-prompt-generator, vocabulary-
 Beyond remixing these foundations, `skylark-ai` contributes:
 
 - **Risk-proportional gating** — a triage stage that classifies input and activates only the pipeline stages warranted by the work's risk level
-- **Linear integration** — issue lifecycle, blocking relations, and event comments as an audit trail throughout the pipeline
-- **Artifact-based state recovery** — YAML frontmatter provenance chains that make pipeline state reconstructable from files alone
+- **Artifact-based state with in-file changelogs** — YAML frontmatter provenance chains and changelog sections that make pipeline state reconstructable from files alone, with no external system dependency
+- **Internal ID allocation** — sequential `SPEC-NNN`, `PLAN-NNN`, `TASK-NNN` IDs with optional external tracker references, making the workflow portable across any project
 - **Adaptive panel narrowing** — 5-expert first rounds that narrow to 2-3 strongest voices on re-review, balancing thoroughness against token cost
 - **Model calibration by risk** — Sonnet for standard implementation review, Opus for elevated+ spec/plan review, cheapest-viable-model for implementer dispatch
 

@@ -43,7 +43,7 @@ Then install desired plugins via `/plugins` TUI, or directly via command:
 
 ## [`skylark`](plugins/skylark/README.md) _(workflow v3 - Current)_
 
-Skylark is a semi-autonomous agentic development pipeline featuring a detailed workflow that self-adjusts complexity based on the risk of the task at hand. This attempts to ensure high-quality output when performing high-risk work, but gracefully removes gates to maximize speed and token-efficiency when working on low-risk items.
+Skylark is a semi-autonomous agentic development pipeline featuring a detailed workflow that self-adjusts complexity based on the risk of the task at hand. This attempts to ensure high-quality output when performing high-risk work, but gracefully removes gates to maximize speed and token-efficiency when working on low-risk items. See [WORKFLOW.md](plugins/skylark/WORKFLOW.md) for the end-to-end pipeline walkthrough with diagrams and gate activation tables.
 
 | Command | Purpose |
 |---|---|
