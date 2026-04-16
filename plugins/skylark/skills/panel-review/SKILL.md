@@ -65,8 +65,10 @@ The caller may specify panel size and model. If not specified, default to
 3 experts on Opus (reviews are leverage points — Opus catches operational
 gaps that save costly rework downstream).
 
-**Present the proposed panel composition to the user and get confirmation
-before dispatching.** If the user suggests changes, adjust.
+Log the panel composition (role + why included) in the synthesis output
+so the user can see who reviewed. Do NOT ask for confirmation before
+dispatching — proceed directly to prompt generation. If the user wants
+to adjust the panel, they can request changes after seeing the report.
 
 ### 3. Generate expert prompts
 
