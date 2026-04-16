@@ -30,7 +30,7 @@ interface McpServerEntry {
 }
 
 /** Tools always denied regardless of risk level. */
-const ALWAYS_DENIED = ['WebSearch', 'WebFetch', 'Skill', 'NotebookEdit'];
+const ALWAYS_DENIED = ['WebSearch', 'WebFetch', 'Skill', 'NotebookEdit', 'Agent'];
 
 /** Tools allowed only for standard/elevated/critical (not trivial). */
 const BASH_ALLOWED_RISKS: RiskLevel[] = ['standard', 'elevated', 'critical'];

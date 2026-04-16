@@ -105,6 +105,14 @@ describe('generateWorkerSettings', () => {
         expect(s.permissions.deny).toContain('NotebookEdit');
       },
     );
+
+    it.each(['trivial', 'standard', 'elevated', 'critical'] as RiskLevel[])(
+      'Agent is denied for %s (workers must not spawn subagents)',
+      (risk) => {
+        const s = generateWorkerSettings(risk, config, 1);
+        expect(s.permissions.deny).toContain('Agent');
+      },
+    );
   });
 
   describe('hook entries', () => {
