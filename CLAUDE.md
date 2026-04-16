@@ -40,6 +40,13 @@ Skylark is the main plugin and the most complex. It encodes a risk-proportional 
 
 **Shared methodology files** in `skills/_shared/` are critical — they define how expert prompts are generated (`expert-prompt-generator.md`), how vocabulary terms are validated (`vocabulary-guide.md`), the prompt skeleton (`prompt-template.md`), artifact file conventions (`artifact-conventions.md`), and the gate activation matrix (`risk-matrix.md`).
 
+## Version Bumps
+
+Plugin versions are tracked in multiple places — update all of them:
+- `plugins/<name>/.claude-plugin/plugin.json` — what Claude Code displays for installed plugins
+- `.claude-plugin/marketplace.json` — the marketplace registry entry
+- `plugins/<name>/package.json` — if present (not all plugins have one)
+
 ## Conventions
 
 - Skills use fully-qualified names with plugin prefix: `/skylark:<skill-name>`, `/reflect:<skill-name>`, `/llmstxt:<skill-name>`
