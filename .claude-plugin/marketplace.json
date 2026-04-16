@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Mocha's AI toolbox",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "plugins": [
     {
@@ -19,7 +19,7 @@
     {
       "name": "skylark",
       "source": "./plugins/skylark",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "description": "Autonomous development pipeline — vocabulary-routed expert panels with risk-proportional gating, Linear integration, and artifact provenance. Single /skylark:implement entry point routes any input (issue, spec, bug report, idea) through triage, prepare, spec-review, write-plan, plan-review, develop, and finish.",
       "tags": ["agentic-workflow", "autonomous-workflow", "expert-review", "vocabulary-routing", "implementation-pipeline"]
     },
@@ -29,6 +29,27 @@
       "version": "0.1.0",
       "description": "Create and maintain llms.txt navigation files across large content vaults. Agent-first directory maps that cut traversal tokens in deep knowledge bases, following the llmstxt.org convention.",
       "tags": ["llmstxt", "navigation", "vault", "knowledge-base", "obsidian"]
+    },
+    {
+      "name": "roadrunner",
+      "source": "./plugins/roadrunner",
+      "version": "0.1.0",
+      "description": "XState v5 deterministic pipeline engine for composed AI-assisted development workflows. Seven-layer orchestrator with vocabulary-routed expert generation, task DAG decomposition, and OpenLLMetry telemetry.",
+      "tags": ["orchestrator", "xstate", "pipeline", "state-machine", "deterministic"]
+    },
+    {
+      "name": "experts",
+      "source": "./plugins/experts",
+      "version": "0.1.0",
+      "description": "Vocabulary-routed expert reviews and development. Generates bespoke domain experts on-the-fly using Forge methodology — precise terminology activates deep knowledge clusters, producing reviews that catch domain-specific issues generic reviewers miss.",
+      "tags": ["review", "expert", "vocabulary-routing", "code-review", "panel-review"]
+    },
+    {
+      "name": "triad",
+      "source": "./plugins/triad",
+      "version": "0.1.0",
+      "description": "Three-agent (PM/PgM/EM) autonomous development framework coordinating via file-based inbox messaging over tmux. Historical experiment preserved for analysis and remixing.",
+      "tags": ["agent-triad", "multi-agent", "autonomous-workflow", "tmux", "historical"]
     }
   ]
 }

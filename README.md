@@ -8,20 +8,12 @@ implementation pipelines, and usage reflection.
 
 | Plugin | What it does |
 |---|---|
-| [**skylark**](plugins/skylark/README.md) | Workflow v3: An autonomous-agent development pipeline that routes "expert" agents through a robust and risk-aware development workflow. Moves through bugs fast but slow-and-steady through load-bearing changes. |
-| [**reflect**](plugins/reflect/README.md) | A reimagination of Claude's built-in `/insights` command, generating the same report but now using a hackable skill+script combo instead of hardcoded TS inside the harness. 😉 |
+| [**roadrunner**](plugins/roadrunner/README.md) | XState v5 deterministic pipeline engine for composed AI-assisted development workflows. Seven-layer orchestrator with vocabulary-routed expert generation, task DAG decomposition, and OpenLLMetry telemetry. |
+| [**skylark**](plugins/skylark/README.md) | Autonomous-agent development pipeline that routes "expert" agents through a robust and risk-aware development workflow. Moves through bugs fast but slow-and-steady through load-bearing changes. |
+| [**experts**](plugins/experts/README.md) | Vocabulary-routed expert reviews using [forge](https://github.com/jdforsythe/forge) methodology. Generates bespoke domain reviewers on-the-fly; provides primitives for spec, plan, and code review. |
+| [**triad**](plugins/triad/README.md) | Three-agent (PM/PgM/EM) autonomous development framework coordinating via file-based inbox messages and orchestrated over tmux. |
+| [**reflect**](plugins/reflect/README.md) | A reimagination of Claude's built-in `/insights` command, generating the same report but now using a hackable skill+script combo instead of hardcoded TS inside the harness. |
 | [**llmstxt**](plugins/llmstxt/README.md) | Create and maintain `llms.txt` navigation files across large content vaults and provide agent-first directory maps that cut traversal tokens in deep knowledge bases. |
-
-<details>
-
-<summary>Retired plugins</summary>
-
-| Plugin | What it does |
-|---|---|
-| [**experts**](plugins/experts/README.md) | Generate domain-specific expert reviewers on-the-fly using vocabulary routing based on [forge](https://github.com/jdforsythe/forge). Provides primitives for spec, plan, and code review; ripe for remixing. Superseded by `skylark`, above. |
-| [**triad**](plugins/triad/README.md) | Three-agent (PM/PgM/EM) autonomous development framework coordinating via file-based inbox messages and orchestrated over tmux. Superseded by `experts`, above. |
-
-</details>
 
 ---
 
@@ -41,7 +33,13 @@ Then install desired plugins via `/plugins` TUI, or directly via command:
 
 ---
 
-## [`skylark`](plugins/skylark/README.md) _(workflow v3 - Current)_
+## [`roadrunner`](plugins/roadrunner/README.md)
+
+XState v5 deterministic pipeline engine implementing a seven-layer architecture for composed AI-assisted development workflows. Roadrunner provides the orchestration layer that drives Skylark's skills through a state machine with vocabulary-routed expert generation, task DAG decomposition via Taskmaster MCP, and OpenLLMetry/Langfuse telemetry.
+
+---
+
+## [`skylark`](plugins/skylark/README.md)
 
 Skylark is a semi-autonomous agentic development pipeline featuring a detailed workflow that self-adjusts complexity based on the risk of the task at hand. This attempts to ensure high-quality output when performing high-risk work, but gracefully removes gates to maximize speed and token-efficiency when working on low-risk items. See [WORKFLOW.md](plugins/skylark/WORKFLOW.md) for the end-to-end pipeline walkthrough with diagrams and gate activation tables.
 
@@ -79,12 +77,9 @@ Claude's Insights tool is incredibly useful for helping you understand your own 
 
 ---
 
-# Retired plugins:
+---
 
-_These are no longer directly installable through the plugin, but they are included for manual use if you are interested in remixing them for your own purposes. EVERYTHING here is "use at your own risk," but the stuff below doubly-so._
-
-
-## `experts` _(workflow v2)_
+## [`experts`](plugins/experts/README.md)
 
 This model is a single-threaded flow that utilizes the techniques described in Forge to handle creation, quoting, and vocabulary routing. It also employs domain expert techniques to create customized prompts for each individual step in the task.
 
@@ -101,7 +96,9 @@ This model is a single-threaded flow that utilizes the techniques described in F
 
 ---
 
-### `triad` _(workflow v1)_
+---
+
+### [`triad`](plugins/triad/README.md)
 
 My original workflow uses TMUX sessions and multiple panes or windows to hold these three independent agents, which can then communicate with each other through the file system, effectively emailing each other with little purpose-built files. A file watcher triggers a "send keys" event to alert them of new messages, allowing rapid, observable, sychronous communication and collaboration between agents.
 
