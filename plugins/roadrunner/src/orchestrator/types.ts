@@ -10,7 +10,7 @@ export interface ResolutionRecord {
 export interface TaskSummary {
   id: number;
   title: string;
-  status: string;
+  status: TaskStatus;
   review_round: number;
   worker_result_path: string | null;
   expert_prompt_path: string | null;
@@ -57,3 +57,4 @@ export type InputType = 'spec' | 'plan' | 'task' | 'raw-idea' | 'raw-problem' | 
 export type RiskLevel = 'trivial' | 'standard' | 'elevated' | 'critical';
 export type Stage = 'triage' | 'prepare' | 'brainstorm' | 'spec_review' | 'write_plan' | 'plan_review' | 'develop' | 'finish';
 export type TaskStatus = 'pending' | 'expert_ready' | 'in_progress' | 'review' | 'done' | 'blocked' | 'skipped';
+export type QueryOutcome = 'task_ready' | 'all_complete' | 'all_blocked';
