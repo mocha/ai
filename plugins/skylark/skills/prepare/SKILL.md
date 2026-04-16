@@ -25,7 +25,7 @@ Read all available context for the work:
 
 **If starting from raw input or external reference:**
 1. Read the input file or description
-2. Search `docs/specs/`, `docs/plans/`, `docs/tasks/` for related work
+2. Search `docs/specs/`, `docs/plans/` for related work, and check beads (`bd search "<keywords>" --json`) for related tasks
 3. Search `git log` for related commits
 
 ### Step 2: Assess Scope
@@ -47,6 +47,8 @@ If 3+ clusters are touched, flag for potential decomposition (return to triage).
 Collect pointers to relevant context. Read each reference to verify it exists and is current.
 
 **Architecture references:**
+- Search `docs/architecture/` for ADRs relevant to this work — prior decisions that constrain or inform the approach
+- Search `docs/strategy/` for design principles, JTBD, and user stories that provide context
 - Search the project's docs or architecture directory for relevant specs, data objects, events
 - Trace YAML frontmatter relationships to find connected components
 

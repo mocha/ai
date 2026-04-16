@@ -91,7 +91,12 @@ Other panelists are covering other angles — go deep on yours rather than
 trying to cover everything. You must identify at least one substantive
 issue or explicitly justify clearance with specific evidence. An empty
 Issues section is not acceptable unless accompanied by a detailed
-justification in the Verdict."
+justification in the Verdict.
+
+Resources available to you: explore `docs/` for additional context —
+`docs/strategy/` has design principles and user stories, `docs/architecture/`
+has architectural decision records. If you need a deeper expert opinion on
+a specific concern, you can invoke `/skylark:solo-review`."
 
 ### 4. Dispatch all experts in parallel
 

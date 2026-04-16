@@ -153,28 +153,28 @@ Then: Cleanup worktree (Step 8)
 
 ### Step 6: Update Artifact Status and Changelog
 
-For each artifact associated with this work (specs, plans, tasks):
+For each artifact associated with this work:
 
-**On completion (Options 1, 2):**
-- Update frontmatter: `status: complete`, `updated: YYYY-MM-DD`
-- Append changelog entry:
+**docs/ artifacts (specs, plans):**
+
+- **On completion (Options 1, 2):** Update frontmatter: `status: complete`, `updated: YYYY-MM-DD`. Append changelog entry:
   ```
   - **YYYY-MM-DD HH:MM** — [FINISH] Complete. [Merged locally | PR: #NNN | Kept: branch-name | Discarded].
   ```
-
-**On discard (Option 4):**
-- Update frontmatter: `status: draft`, `updated: YYYY-MM-DD`
-- Append changelog entry:
+- **On discard (Option 4):** Update frontmatter: `status: draft`, `updated: YYYY-MM-DD`. Append changelog:
   ```
   - **YYYY-MM-DD HH:MM** — [FINISH] Discarded. Work deleted per user request.
   ```
-
-**On keep (Option 3):**
-- Leave frontmatter as-is
-- Append changelog entry:
+- **On keep (Option 3):** Leave frontmatter as-is. Append changelog:
   ```
   - **YYYY-MM-DD HH:MM** — [FINISH] Branch kept: <name>. Worktree: <path>.
   ```
+
+**Task beads:**
+
+- **On completion (Options 1, 2):** Verify all task beads are closed (`bd list --json` and check). Close any that were completed but not yet closed. Report final stats: `bd stats`.
+- **On discard (Option 4):** Reopen task beads: `bd reopen <id> --json` for each. They return to the ready pool.
+- **On keep (Option 3):** Leave beads as-is.
 
 Include AC summary (met/deviated/not-met) and any deviations from plan in the changelog entry.
 
@@ -206,6 +206,8 @@ Skip session notes for trivial work unless something surprising was discovered.
 ### Step 8: Check Architecture Docs
 
 For elevated+ risk:
+- Check if `docs/architecture/` has ADRs that need updating or if new ADRs should be written for decisions made during implementation
+- Check if `docs/strategy/` has design principles or JTBD docs that this work affects
 - Check if the project's architecture docs need updates (new services, changed data flows, new integrations)
 - Check if CLAUDE.md conventions need updating
 - Check for stale references in architecture specs that this work invalidated
@@ -236,9 +238,9 @@ git status  # Verify clean tree
 ### Step 10: Recommend Next
 
 Suggest 1-2 candidates for next work:
-- Related artifacts — specs or tasks that depend on or are unblocked by this completion
-- Same-project siblings (other tasks in the same plan)
-- Other pending tasks in `docs/tasks/` with `status: pending`
+- Run `bd ready --json` — completing this work may have unblocked dependent tasks
+- Check for discovered work: `bd dep tree <completed-task-id> --reverse --json` shows bugs/tasks found during implementation
+- Related specs or plans in `docs/` that are unblocked by this completion
 
 ## Quick Reference
 

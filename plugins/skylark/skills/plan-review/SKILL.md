@@ -1,11 +1,11 @@
 ---
 name: plan-review
-description: Internal pipeline stage that decomposes an implementation plan into discrete task specs, then panel-reviews each task individually. Tasks are written as individual files in docs/tasks/ with frontmatter for status tracking. Max 2 review rounds per task before escalation. Called by implement — not user-invocable.
+description: Internal pipeline stage that decomposes an implementation plan into discrete tasks via beads (bd), then panel-reviews each task individually. Tasks are created as beads with dependency tracking and atomic claiming. Max 2 review rounds per task before escalation. Called by implement — not user-invocable.
 ---
 
 # Plan Review
 
-Decompose a plan into individual task specs, then panel-review each task. This is where the plan becomes executable units of work.
+Decompose a plan into individual tasks via beads, then panel-review each task. This is where the plan becomes executable units of work.
 
 ## When Called
 
@@ -19,40 +19,42 @@ Follow these steps in order. Do not skip steps.
 
 Read the plan fully. Identify all tasks, their dependencies, domains, and scope.
 
-### 2: Extract Task Specs
+### 2: Create Tasks as Beads
 
-For each task in the plan, allocate the next `TASK-NNN` ID per `_shared/artifact-conventions.md` and create an individual task spec file at `docs/tasks/TASK-NNN-<slug>.md`:
+For each task in the plan, create a bead via `bd create`. Task content maps to bead fields per `_shared/artifact-conventions.md`:
 
-```yaml
----
-id: TASK-NNN
-title: [Task Title]
-type: task
-status: pending
-external_ref: ""
-parent: docs/plans/PLAN-NNN-slug.md
-task_number: N
-depends_on: []
-domain: [primary domain cluster]
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
----
+```bash
+# Create each task as a bead
+bd create "Task title" \
+  -t task \
+  -p 2 \
+  --description="Scope: what this task builds/changes. Files: exact paths to create, modify, and test. Key considerations: domain concerns, edge cases." \
+  --design="Steps: the ordered steps from the plan, with code and verification commands." \
+  --acceptance="Concrete, testable acceptance criteria traced from plan steps." \
+  --spec-id "docs/plans/PLAN-NNN-slug.md" \
+  --json
 ```
 
-Body includes:
-- **Scope** — what this task builds/changes (from the plan)
-- **Files** — exact paths to create, modify, and test
-- **Acceptance criteria** — concrete, testable (traced from plan steps)
-- **Key considerations** — domain concerns, edge cases, testing approach
-- **Steps** — the ordered steps from the plan, with code and verification
-- **Changelog** — with creation event
+For task content that contains special characters (backticks, quotes), use stdin:
+
+```bash
+echo 'Description with `code` and "quotes"' | bd create "Task title" -t task --description=- --json
+```
+
+**After creating all tasks, wire dependencies:**
+
+```bash
+# Task B depends on Task A (A must complete before B can start)
+bd dep add <task-b-id> <task-a-id> --type blocks
+```
 
 Each task must be:
 - **Self-contained** — can be implemented and tested independently
 - **Scoped** — clear boundaries, acceptance criteria, single domain
-- **Ordered** — explicit dependencies on other tasks (using task IDs)
+- **Ordered** — explicit blocking dependencies between tasks
+- **Right-sized** — each task spec should target ~2,000 tokens. The total dispatch payload (task spec + parent context + expert prompt) must fit within **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`. If a task would exceed this, split it into child beads before review.
 
-**Present the full decomposition to the user for approval before review.** Adjust if requested.
+**Present the full decomposition to the user for approval before review.** Show the dependency tree with `bd dep tree <first-task-id>`. Adjust if requested.
 
 ### 3: Check for Oversized Plans
 
@@ -63,8 +65,8 @@ If decomposition produces 8+ tasks or tasks have dense cross-dependencies:
 
 ### 4: Panel Review Each Task
 
-For each task spec, invoke `/skylark:panel-review` with:
-- Target: the task spec file
+For each task bead, invoke `/skylark:panel-review` with:
+- Target: the task content (retrieve via `bd show <id> --json` — pass the description, design, and acceptance criteria to the panel)
 - Panel size: per `_shared/risk-matrix.md` (typically 3 experts for elevated, 5→3 adaptive for critical)
 - Model: per risk matrix
 - Panel composition tailored to the task's domain (a database task gets different experts than a CLI task)
@@ -75,17 +77,17 @@ For each task spec, invoke `/skylark:panel-review` with:
 
 ### 5: Handle Verdicts Per Task
 
-**Ship** → Task spec approved. Update frontmatter: `status: approved`. Append changelog entry. Move on.
+**Ship** → Task approved. Add a label: `bd label add <id> approved --json`. Move on.
 
-**Revise** → Apply fixes to the task spec, re-invoke `/skylark:panel-review` (max 2 rounds per task). If still failing after round 2, flag to user but continue reviewing other tasks.
+**Revise** → Update the task bead with fixes (`bd update <id> --description="..." --design="..." --json`). **Post-revision size check:** estimate the revised task's combined size (spec + parent context + expert prompt). If it exceeds 40,000 tokens per `_shared/risk-matrix.md`, split it into child beads before re-reviewing. Then re-invoke `/skylark:panel-review` (max 2 rounds per task). If still failing after round 2, flag to user but continue reviewing other tasks.
 
-**Rethink** → Flag to user immediately. This task may require plan restructuring. Do NOT review dependent tasks until the rethink is resolved.
+**Rethink** → Flag to user immediately. Mark the task blocked: `bd update <id> --status blocked --json`. This task may require plan restructuring. Do NOT review dependent tasks until the rethink is resolved.
 
 ### 6: Report Results
 
 Append changelog entry to the plan:
 ```
-- **YYYY-MM-DD HH:MM** — [PLAN-REVIEW] Decomposed into N tasks. Approved: N. Needs revision: N. Blocked: N. Tasks: TASK-NNN through TASK-NNN.
+- **YYYY-MM-DD HH:MM** — [PLAN-REVIEW] Decomposed into N tasks via beads. Approved: N. Needs revision: N. Blocked: N. Beads: bd-XXXX through bd-YYYY.
 ```
 
 ### 7: Return to Implement
@@ -93,26 +95,22 @@ Append changelog entry to the plan:
 Return:
 ```
 tasks:
-  - id: TASK-NNN
-    path: docs/tasks/TASK-NNN-slug.md
+  - id: bd-XXXX
     status: approved | needs-revision | blocked
     domain: database
-    depends_on: []
-  - id: TASK-NNN
-    path: docs/tasks/TASK-NNN-slug.md
+  - id: bd-YYYY
     status: approved
     domain: api
-    depends_on: [TASK-NNN]
+    depends_on: [bd-XXXX]
   ...
-recommended_order: [TASK-NNN, TASK-NNN, ...]
 blocked_tasks: [list, if any]
 ```
 
-Implement will only dispatch approved tasks to `/skylark:develop`. Blocked tasks and their dependents are skipped.
+Implement uses `bd ready --json` to determine execution order — beads handles dependency resolution. Only approved, unblocked tasks are dispatched to `/skylark:develop`.
 
 ## What This Skill Does NOT Do
 
 - Review the plan as a single document — decomposes into tasks first
 - Implement tasks — use `/skylark:develop` for that
-- Rewrite the plan — fixes individual task specs based on review findings
-- Skip decomposition — task specs ARE the review unit
+- Rewrite the plan — fixes individual task beads based on review findings
+- Skip decomposition — tasks ARE the review unit
