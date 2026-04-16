@@ -1,6 +1,6 @@
 {
   "name": "skylark",
-  "version": "0.1.0",
+  "version": "0.3.1",
   "description": "Skylark development workflow — vocabulary-routed expert pipeline with risk-proportional gating, Linear integration, and artifact provenance",
   "author": {
     "name": "Mocha",
