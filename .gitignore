@@ -2,3 +2,8 @@
 *.swp
 *.swo
 *~
+node_modules/
+dist/
+.obsidian/
+.roadrunner/state.json
+.vite/
