@@ -30,3 +30,30 @@ export interface SizingConfig {
   max_prose_lines: number;
   max_file_blast_radius: number;
 }
+
+export interface TaskSpec {
+  id: number;
+  title: string;
+  dependencies: number[];
+  status: string;
+  details: string;
+  acceptanceCriteria: string[];
+  relevantFiles: string[];
+}
+
+export interface ReviewFinding {
+  severity: string;
+  description: string;
+  file: string;
+  line: number;
+}
+
+export interface ArtifactRef {
+  type: 'spec' | 'plan' | 'task';
+  path: string;
+}
+
+export type InputType = 'spec' | 'plan' | 'task' | 'raw-idea' | 'raw-problem' | 'raw-input' | 'external-ref';
+export type RiskLevel = 'trivial' | 'standard' | 'elevated' | 'critical';
+export type Stage = 'triage' | 'prepare' | 'brainstorm' | 'spec_review' | 'write_plan' | 'plan_review' | 'develop' | 'finish';
+export type TaskStatus = 'pending' | 'expert_ready' | 'in_progress' | 'review' | 'done' | 'blocked' | 'skipped';
