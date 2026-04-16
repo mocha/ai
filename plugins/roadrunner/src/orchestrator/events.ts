@@ -66,6 +66,9 @@ export interface ReviewComplete {
   round: number;
   report_path: string;
   findings: ReviewFinding[];
+  /** Which review gate produced this verdict. Spec compliance revisions
+   *  do not count against the code quality round cap. */
+  gate: 'spec_compliance' | 'code_quality';
 }
 
 // From Layer 5 (Worker Execution)

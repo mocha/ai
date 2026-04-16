@@ -72,6 +72,7 @@ import {
   dispatchHaikuSizing,
   dispatchDecomposeArtifact,
   dispatchRedecompose,
+  dispatchUpdateTaskStatus,
   dispatchFinish,
   emitPipelineSummary,
   escalateDrift,
@@ -216,6 +217,7 @@ export const orchestratorMachine = setup({
     dispatchHaikuSizing: dispatchHaikuSizing as any,
     dispatchDecomposeArtifact: dispatchDecomposeArtifact as any,
     dispatchRedecompose: dispatchRedecompose as any,
+    dispatchUpdateTaskStatus: dispatchUpdateTaskStatus as any,
     dispatchFinish: dispatchFinish as any,
     emitPipelineSummary: emitPipelineSummary as any,
     escalateDrift: escalateDrift as any,
@@ -694,7 +696,7 @@ export const orchestratorMachine = setup({
               {
                 guard: 'workerSucceeded',
                 target: 'review_task',
-                actions: ['storeWorkerResult', 'dispatchReview'],
+                actions: ['storeWorkerResult'],
               },
               {
                 guard: 'workerBlocked',
@@ -736,7 +738,7 @@ export const orchestratorMachine = setup({
                 {
                   guard: 'isShip',
                   target: 'exit_ship',
-                  actions: ['markTaskDone', 'dispatchQueryNextTask'],
+                  actions: ['markTaskDone', 'dispatchUpdateTaskStatus', 'dispatchQueryNextTask'],
                 },
                 {
                   guard: 'isReviseAndBelowMax',
@@ -760,7 +762,7 @@ export const orchestratorMachine = setup({
                   {
                     guard: 'isSkip',
                     target: 'exit_skip',
-                    actions: ['markTaskSkipped', 'dispatchQueryNextTask'],
+                    actions: ['markTaskSkipped', 'dispatchUpdateTaskStatus', 'dispatchQueryNextTask'],
                   },
                   {
                     guard: 'isAbortEscalation',
@@ -828,7 +830,7 @@ export const orchestratorMachine = setup({
               {
                 guard: 'isSkip',
                 target: 'next_task',
-                actions: ['markTaskSkipped', 'dispatchQueryNextTask'],
+                actions: ['markTaskSkipped', 'dispatchUpdateTaskStatus', 'dispatchQueryNextTask'],
               },
               {
                 guard: 'isAbortEscalation',
@@ -851,7 +853,7 @@ export const orchestratorMachine = setup({
               {
                 guard: 'isSkip',
                 target: 'next_task',
-                actions: ['markTaskSkipped', 'dispatchQueryNextTask'],
+                actions: ['markTaskSkipped', 'dispatchUpdateTaskStatus', 'dispatchQueryNextTask'],
               },
               {
                 guard: 'isAbortEscalation',

@@ -1,0 +1,24 @@
+{
+  "name": "@mocha/roadrunner",
+  "version": "0.1.0",
+  "description": "XState v5 deterministic pipeline orchestrator",
+  "type": "module",
+  "main": "dist/orchestrator/index.js",
+  "bin": {
+    "roadrunner": "./dist/orchestrator/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "xstate": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

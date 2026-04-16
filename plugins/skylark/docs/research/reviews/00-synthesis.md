@@ -1,632 +1,803 @@
 ---
 date: 2026-04-15
-status: synthesis — first pass
-inputs: 27 per-framework / per-domain conformance reports in `reviews/{skylark,gastown,triad}/`
-scope: framework-level adoption decision for the Skylark pipeline
-deliberately out of scope: Wasteland / federation; the task-atomicity spec work (separate workstream)
+status: synthesis — second pass
+inputs:
+  - 27 per-framework / per-domain conformance reports in `reviews/{skylark,gastown,triad}/`
+  - 9 composable-tool conformance reports in `reviews/{xstate,taskmaster,restate,openllmetry,langfuse,context-mode}/`
+  - composable-toolchain-report.md (landscape scan)
+  - ENG-180 retrospective, context/compaction research, sandbox ergonomics report
+scope: architecture decision for the next-generation Skylark pipeline
+supersedes: first-pass synthesis (three-framework comparison only)
 ---
 
-# Framework Evaluation Synthesis — Skylark × Gas Town × Triad
+# Evaluation Synthesis — Second Pass
 
 ## 1. Executive summary
 
-This synthesis closes the evaluation round triggered by the ENG-180
-retrospective. It does not yet recommend adoption. It does narrow the
-decision space, name the pivotal unresolved question, and list the
-salvageable ideas each framework contributes.
-
-**Scorecard across all 117 requirements:**
-
-| Domain | Skylark | Gas Town | Triad | Winner |
-|---|---:|---:|---:|---|
-| 01 Orchestration model | 0 | 7 | 0 | Gas Town |
-| 02 Worker model | 4 | 7 | 3 | Gas Town |
-| 03 Artifact & task substrate | 3 | 11 | 5 | Gas Town |
-| 04 Review & gate model | 8 | 3 | 6 | Skylark |
-| 05 Context engineering | 2 | 4 | 0 | Gas Town |
-| 06 Task decomposition & sizing | 4 | 1 | 6 | Triad |
-| 07 Integration & merge model | 0 | 5 | 0 | Gas Town |
-| 08 Monitoring & recovery | 0 | 10 | 0 | Gas Town |
-| 09 Environment isolation | 1 | 4 | 2 | Gas Town |
-| **MEETS total** | **22** | **52** | **22** | |
-
-Gas Town wins seven of nine domains and leads 52 to 22. Skylark and Triad
-tie for second by count, with radically different strength profiles.
-
-**The shape of the win matters more than the count.** Gas Town's dominance
-is concentrated in *infrastructure* domains: orchestration, artifact
-substrate, merge queue, monitoring, environment isolation. The two
-domains Gas Town *loses* — review-and-gates and task-decomposition —
-are the two domains ENG-180 blamed for the 6,700 LOC PR. Gas Town gives
-you runtime excellence. It does not give you atomicity discipline or
-panel review.
-
-**Topline characterization:**
-
-- Gas Town is a *runtime substrate*. Mature, shipped, Go-native, with a
-  polymorphic Beads data model, Bors merge queue, OTEL telemetry, and a
-  four-tier supervisor chain. It does not know how to size a task or
-  generate a per-task expert.
-- Skylark is a *process discipline*. Vocabulary-routed experts, bounded
-  panel review, risk-tiered gates. Strong at review quality, weak nearly
-  everywhere else. Almost everything below the review layer is
-  delegated to the host with no explicit contract.
-- Triad is a *retired-but-correct decomposition cascade*. The three-phase
-  Proposal→Project→Task pipeline with hard schema-depth cap, 2-cycle
-  `round` accounting, Sonnet-as-sizing-sentinel, and explicit decision
-  capture. The orchestration layer that killed it is irrelevant; the
-  discipline it encoded is salvageable.
-
-**Pivotal finding (confirmed):** Gas Town Polecat prompts are
-template-driven. `gt sling --args/--message/--var` passes task-specific
-*strings*, but there is no first-class channel for a dispatcher to
-supply an arbitrary full prompt body. Vocabulary-routed expert
-generation — Skylark's flagship capability — cannot ride Gas Town as-is.
-Whether opening that channel is a week of PR work or a structural fight
-with Gas Town's design is the single biggest unresolved question before
-an adoption path can be locked in.
-
-**Recommendation direction** (to be validated by trial): *Option 3 with
-a twist.* Gas Town as runtime substrate. Skylark as the domain/discipline
-layer that generates per-task expert prompts and runs panel reviews.
-Triad mined for three specific patterns: the decomposition cascade with
-depth cap, `round`-accounted negotiation, and `## Rationale`-style
-decision capture on artifacts. Integration seam is the per-task prompt
-channel added to Gas Town (upstream PR or Polecat-role shim).
-
-## 2. Methodology in one paragraph
-
-Nine framework-agnostic domain specs were written from three research
-reports (sandbox ergonomics, context/compaction, ENG-180 retro) plus
-general best-practice knowledge. Each spec enumerated testable
-requirements. Twenty-seven independent Opus agents — one per framework
-per domain — evaluated each framework against the relevant spec,
-producing conformance reports with MEETS/PARTIAL/MISSING verdicts plus
-evidence. Reports live in `reviews/{skylark,gastown,triad}/`. No
-agent was told how another framework scored. No recommendations were
-produced at the per-report level. This synthesis is the first time
-evidence is compared.
-
-## 3. Per-domain analysis
-
-### 3.1 Orchestration model — Gas Town 7, Skylark 0, Triad 0
-
-Gas Town is the only framework with a genuine orchestrator. Declarative
-TOML formulas, Dolt-backed state, DAG via `needs` / `bd ready` / convoy
-waves, resume via `gt prime` / `gt handoff`, crash-safe transactions.
-The observation worth carrying forward: **Gas Town has two coexisting
-orchestrators** — a deterministic data plane (Beads + formulas +
-scheduler + convoys + refinery) and an LLM Mayor for strategic routing.
-The data plane maps cleanly to spec; the Mayor is the flexibility layer.
-
-Skylark's orchestrator is prose in `skills/implement/SKILL.md`
-interpreted by an LLM with no context ceiling — the direct cause of
-ENG-180's four-plus compactions.
-
-Triad has no centralized orchestrator; it's a peer-to-peer protocol
-between three long-running reasoning agents. The "orchestrator" skills
-(`start`/`kick`/`status`/`resume`) manage tmux, not the pipeline.
-
-### 3.2 Worker model — Gas Town 7, Skylark 4, Triad 3
-
-This is the pivotal domain for adoption. Gas Town wins on ephemeral
-sessions, persistent identity (agent bead + CV chain), pluggable runtime
-(seven+ supported agents via 4-tier JSON-preset adapter — the single
-strongest runtime story in any framework), and bounded lifetime via
-witness patrol.
-
-**But the critical gap holds**: per-task prompt generation is PARTIAL,
-not MEETS. Role prompts come from `internal/templates/roles/polecat.md.tmpl`
-(Go templates with `{{ .Polecat }}`, `{{ .RigName }}` substitution),
-file-based directives at `<townRoot>/directives/<role>.md`, and TOML
-formulas. Variable substitution is the only dynamic channel. Skylark's
-vocabulary-routed expert generation — where an expert's *entire prompt
-body* is constructed per task from domain vocabulary — has no home in
-this model without extension.
-
-Skylark's strengths: typed status enum (DONE / DONE_WITH_CONCERNS /
-NEEDS_CONTEXT / BLOCKED) is exactly the spec's requirement, per-task
-prompt generation is native, curated inputs are well-specified. Missing:
-persistent identity, per-role tool scoping (no `tools:` / `permissionMode:`
-in any skill's frontmatter), 60% handoff discipline, bounded timeouts.
-
-Triad explicitly *rejects* per-task prompt generation: "The task file
-IS the contract." Pluggable runtime is also refused: "Always dispatch
-workers using model: sonnet." Design intent, not omission.
-
-### 3.3 Artifact & task substrate — Gas Town 11, Triad 5, Skylark 3
-
-Gas Town's widest lead. Beads is a purpose-built implementation of this
-spec: Dolt-backed SQL with git-like versioning, polymorphic `issues`
-table carrying tasks/bugs/features/epics/decisions/agents/messages/
-molecules/gates/convoys/merge-requests, typed dependency edges, full
-query language (`bd query` with compound booleans, `bd graph`,
-`bd dep tree`), atomic transactions, events table with `ConvoyManager`
-polling every 5s, short prefixed IDs, cross-rig routing via a `routes`
-table, JSONL disaster-recovery export every 15 minutes. Three data
-planes: Operational (Dolt), Ledger (JSONL→git permanent), Design
-(DoltHub commons, planned).
-
-Triad's substrate is markdown+YAML with explicit decision-capture
-sections (`## Rationale`, `## Context`, `## Open Questions`) and
-preserved negotiation archives. Cost telemetry (`actual_tokens`,
-`actual_duration_minutes`) embedded per task and rolled up to
-project-complete tables. Missing: query CLI, atomicity (documented race
-in `create-task` ID scan).
-
-Skylark is at the opposite end — markdown + YAML frontmatter interpreted
-by LLM agents at runtime, no scripts, no CLI, `parent`/`target` links
-by relative path while `depends_on` links by ID (dual model), Linear
-positioned as competing canonical store at elevated+ risk.
-
-### 3.4 Review & gate model — Skylark 8, Triad 6, Gas Town 3
-
-Skylark's home turf. Dedicated `panel-review` and `solo-review`
-composable primitives consumed by `spec-review`, `plan-review`, and
-`develop`. Typed verdicts (Ship/Revise/Rethink plus stage-level
-approved/rethink/escalate), parallel panels for elevated+ risk,
-per-dispatch bespoke expert generation, hard 2-round cap, evidenced
-approvals via report frontmatter + changelog, composability (review
-primitives consumed by three separate stages). Distinctive
-architectural choices: dual-gate `develop` (spec compliance solo
-review *then* code-quality panel), explicit "Do Not Trust the Report"
-directive, "don't pass round 1 findings to round 2" independence rule,
-asymmetric "one Rethink vetoes" consolidation.
-
-Triad's bounded 2-cycle `round`-accounted revision loop with escalation
-chain (Dev→EM→PgM→PM→Human) is a clean minimalist gate primitive.
-Typed dispositions include a `directive` for human override — an
-explicit override semantic neither other framework ships.
-
-Gas Town's gates are formula-level (multi-reviewer convoy formulas
-like `code-review.formula.toml`, `mol-plan-review.formula.toml`) but
-the retry loop is an *unbounded* Beads dependency graph. Elegant but
-no max-round counter. No dedicated panel-review primitive.
-
-All three lack: (1) recurring-findings-to-automation loop — every ENG-180
-retro panel complaint that repeated across waves should be convertible
-to a lint rule, and no framework does this; (2) plan-vs-reality
-pre-dispatch drift gate — the specific failure that cost ENG-180 two
-dead-end tasks.
-
-### 3.5 Context engineering — Gas Town 4, Skylark 2, Triad 0
-
-Gas Town's material advantages: predecessor-session query via
-`gt seance --talk <id>` that spawns `claude --fork-session --resume
-<id>` (elegant — doesn't require parsing a handoff artifact), auto-
-persistence hooks on SessionStart/PreCompact/Stop, disk-canonical
-Beads+git state. Missing: numeric context budget, utilization alerts,
-prompt-cache discipline — a blind spot every framework shares.
-
-Skylark's sole MEETS is disk-canonical state via artifact conventions.
-Notably, Skylark's per-task CLAUDE.md regeneration *actively works
-against* prompt caching — a design misstep given the research on cache
-stability.
-
-Triad's persistent-session architecture is structurally opposed to the
-entire domain. The retirement README openly diagnoses several spec
-requirements as failure modes: "An agent couldn't cheaply ask 'what
-did you already tell PM?' without re-reading the inbox log."
-
-**No framework enforces the 60% context budget.** This is the single
-most load-bearing gap across the entire evaluation. ENG-180's four-plus
-compactions are direct evidence that unenforced budgets do not hold.
-
-### 3.6 Task decomposition & sizing — Triad 6, Skylark 4, Gas Town 1
-
-Triad's only domain win, and on the domain that ENG-180 made critical.
-Three-phase Proposal→Project→Task cascade with 2-cycle negotiation caps
-at each boundary, hierarchy hard-capped at three schema layers, runnable
-acceptance criteria required, EM cannot create projects (hard triage
-funnel: "No work enters the system without a proposal"), workers
-policy-pinned to Sonnet as an implicit sizing sentinel (if Sonnet
-can't hold the task in one window, the task was mis-sized). End-to-End
-Validation Flows executed against running stacks at project-complete.
-
-Skylark's risk-tier routing and pre-dispatch scope validation are
-native moves but absent the hard sizing enforcement.
-
-Gas Town is explicitly weak here and the evaluation confirmed the
-hypothesis: strong decomposition *structure* (beads with typed deps,
-convoy DAG staging via Kahn's algorithm, iterative planning via
-`mol-idea-to-plan` 6-round formulas, automatic status rollup) and weak
-decomposition *discipline* (no LOC cap, no session-fit test, no
-pre-dispatch drift check, no compaction trigger, no risk-tier gate
-selection). The Mayor role template's "File It, Sling It" directs
-coordination through beads but permits direct implementation and does
-not enforce sizing.
-
-**Atomicity is not a problem Gas Town solves.** Under any adoption
-path, the sizing workstream remains Skylark's responsibility (or
-Triad-derived) riding on top of Gas Town's decomposition substrate.
-
-### 3.7 Integration & merge model — Gas Town 5, Skylark 0, Triad 0
-
-Refinery is the marquee feature: Bors-style batch-then-bisect with
-real `bisectBatch()` + `bisectRight()` binary search + flaky-retry, CI
-runs on merged state via `BuildRebaseStack()`, automated conflict
-recovery via blocking Beads task with templated rebase instructions,
-clean `polecat/<name>/<issue-id>` branch-per-task, `gt done` syncs
-worktree to fresh trunk.
-
-Gaps worth flagging: branch protection is client-side pre-push hook
-only, `TypeMerged`/`TypeMergeStarted`/`TypeMergeFailed` events are
-declared but no call site emits them (notifications degrade to
-free-text `gt nudge`), AI `quality-review` step exists but defaults
-off and is "measurement-only, do NOT block the merge", no
-`.git/index.lock` recovery, no plan-drift check at dispatch.
-
-Skylark ships zero — no CI integration, no merge queue, no bisecting,
-no drift gate, no stale-lock recovery. Six of ENG-180's ten
-retrospective suggestions map directly to unmet requirements here.
-
-Triad delegates almost entirely to host project conventions, with
-internal spec drift (PM can push to main while workers cannot;
-different specs give different conflict-resolution ownership; three
-inconsistent branch-naming conventions coexist).
-
-### 3.8 Monitoring & recovery — Gas Town 10, Skylark 0, Triad 0
-
-Gas Town's largest single delta vs either other framework. OTEL
-telemetry with `run.id` correlation, explicit health state taxonomy
-(working / stalled / GUPP-violation / zombie / idle) with thresholds,
-four-tier supervisor chain (Boot → Deacon → Witness → workers with
-Daemon 3-minute heartbeat), severity-routed escalation to
-bead/mail/email/SMS, `gt doctor --fix` / `gt cleanup` /
-`gt deacon zombie-scan` / `gt checkpoint` for crash recovery,
-`gt feed --problems` TUI + web dashboard, `gt costs` + `agent.usage`
-events.
-
-Caveats: `otel-architecture.md` flags several events as roadmap
-(PR #2199), and `witness-at-team-lead.md` is explicitly "NOT YET
-IMPLEMENTED — future architecture."
-
-Skylark provides nothing at the runtime level. Monitoring primitives
-are the markdown changelog, self-reported implementer status, and
-fiat-capped 2-round review loops. Entire domain delegated to a
-nonexistent host-harness contract.
-
-Triad has surprisingly mature human-facing ergonomics
-(`/triad:status`, `/triad:kick`, `/triad:resume`, fswatch inbox-watcher
-with systemd `Restart=on-failure` and launchd `KeepAlive`) but no
-continuous health supervisor.
-
-### 3.9 Environment isolation — Gas Town 4, Triad 2, Skylark 1
-
-Gas Town wins but not decisively. Git-worktree-per-polecat, on-demand
-`gt sling` provisioning + `gt done` teardown, PreToolUse
-`gt tap guard dangerous-command` covering rm -rf / force-push / drop
-table / package-install / SQL drops with exit code 2, mTLS proxy with
-hard command allow-list and per-cert rate limiting.
-
-But `--dangerously-skip-permissions` is baked uniformly into every
-role TOML with no container coupling, credentials are shell-inherited
-and shared across workers, no iptables/network allow-list, no fail-
-closed if sandbox wrapper absent, MCP gating absent from hooks
-templates. The `sandboxed-polecat-execution.md` proposal (2026-03-02)
-has config scaffolding (`internal/config/types.go:751-755`) but
-daytona provisioning is unimplemented; shipped `docker-compose.yml`
-is a single workspace-wide container, not per-worker.
-
-Triad's two MEETS are actually *cleaner* than anything Skylark ships:
-`autoAllowBashIfSandboxed: true` across all managers plus macOS
-`safehouse` sandbox wrapping every `claude` session. Weakness is
-explicit fallback to plain `claude` when safehouse absent (fail-open
-when spec wants fail-closed).
-
-Skylark's single MEETS is on-demand worktree provisioning. Everything
-else — no `.claude/settings.json`, no hooks, no Dockerfile — silently
-delegated to the host harness with no contract.
-
-## 4. Framework character sketches
-
-### Gas Town
-
-Operating at a level of *system maturity* none of the other two approach.
-Go codebase, Dolt database, Bors merge queue, OTEL observability,
-docker-compose shipping, three-data-plane model, federated coordination
-(Wasteland — out of scope), dashboards, shell completions.
-
-Optimized for **fleet scale** — the design target is 20-50 concurrent
-agents coordinating through a shared Beads substrate. The Mayor role
-does strategic LLM reasoning; everything else is code.
-
-What it does not do: teach you how to decompose a task, generate a
-per-task expert prompt, or run a bounded panel review. Its review
-primitives (convoy formulas) are retry-loop-unbounded. Its
-decomposition is delegated to the Mayor's reasoning.
-
-### Skylark
-
-A thin skill-layer plugin with zero runtime. Everything is prose in
-`skills/*/SKILL.md` files interpreted by a host Claude Code session at
-invocation time. No CLI, no database, no hooks, no supervisor, no
-telemetry.
-
-Strength is *content*: vocabulary-routed expert generation, bounded
-panel review architecture, risk-tiered gate shapes, triage funnel,
-composable review primitives. ENG-180 is evidence this content layer
-produces high-quality output when the pipeline survives to run.
-
-Weakness is *infrastructure*: the pipeline does not survive to run
-reliably. Four-plus compactions, three-hundred-line resumption notes,
-plan-to-reality drift, merge-at-end integration, zero observability.
-
-### Triad
-
-Retired but honest about it. The README diagnoses its own failure
-modes; the evaluation confirmed every diagnosis. Persistent-session
-tmux architecture was the wrong call in 2026; the decomposition
-cascade, decision-capture discipline, `round`-accounted gates, and
-Sonnet-as-sentinel were the right calls.
-
-Not a merger candidate at the architecture level. A mining ground for
-specific discipline patterns that the living frameworks both lack.
-
-## 5. Option space revisited
-
-The original five adoption options, re-assessed against the evidence:
-
-### Option 1: Full adoption of Gas Town
-
-*Skylark becomes a set of Gas Town Formulas + custom Polecat roles. The
-`gt` binary is the runtime. Skylark's current skill files become role
-prompts and formula steps.*
-
-**Viability: conditional on the prompt-channel question.** Full
-adoption means converting Skylark's per-task expert generation to ride
-the `gt sling --var/--args` channel. This is probably feasible — the
-experts would be emitted as full prompt bodies into a variable, and the
-role template would include them — but it is a meaningful redesign of
-how vocabulary routing fits into the dispatch path. Until trialed, it
-is not a known-good shape.
-
-**Trade-offs given up:** Skylark's direct control over prompt
-construction; the `docs/`-markdown-native artifact model (everything
-moves to Beads); the Claude-Code-only runtime assumption (Gas Town's
-multi-runtime is a gain, not a loss, but it does imply testing under
-runtimes Skylark has never run on).
-
-### Option 2: Partial adoption — Beads only
-
-*Keep Skylark's pipeline skills as-is, but switch the artifact/task
-layer from markdown files in `docs/` to Beads.*
-
-**Viability: high but undersized.** The 11-MEETS artifact substrate is
-the single most valuable Gas Town piece, and importing Beads alone is
-operationally tractable (two binaries, Dolt database, one import of
-existing markdown artifacts). But this misses the Refinery, OTEL,
-supervisor chain, and merge queue — the parts that would actually fix
-ENG-180's integration-at-end and unattended-run failures.
-
-Good as a *staging step* toward Option 3. Weak as an endpoint.
-
-### Option 3: Partial adoption — Gas Town as runtime, Skylark as domain layer
-
-*Use Mayor/Polecats/Refinery/Witness for orchestration; Skylark's
-pipeline runs inside a Mayor role or as a Formula, with vocabulary-
-routed experts staying Skylark's.*
-
-**Viability: highest fit-to-effort, contingent on the prompt-channel
-question.** Skylark keeps what it's strongest at (review model, expert
-generation, risk routing). Gas Town provides the infrastructure
-Skylark ships zero of (orchestration, merge queue, monitoring,
-artifact substrate). The Mayor becomes Skylark's entry point.
-
-**The integration seam is the prompt channel.** Either Skylark emits a
-full Polecat prompt body into a `gt sling --var EXPERT_PROMPT=...`
-variable that the role template interpolates, or Skylark contributes
-upstream a first-class prompt-body dispatch parameter. Neither is
-catastrophic. Both need validation.
-
-**This is the current recommendation direction.**
-
-### Option 4: Mirror patterns, stay standalone
-
-*Port specific ideas into Skylark's own codebase.*
-
-**Viability: low ROI.** The evaluation quantifies what Skylark would
-need to build: an orchestration engine with declarative pipeline
-definition, a structured artifact substrate with query CLI, a Bors
-merge queue with bisecting, an OTEL telemetry layer, a three-tier
-supervisor chain, environment isolation with per-worker containers.
-That is not a mirror-patterns project; that is rebuilding Gas Town.
-
-Defensible only if the upstream-risk or design-philosophy gap on Gas
-Town turns out to be structurally unworkable.
-
-### Option 5: Skip Gas Town
-
-*Keep Skylark as-is and solve the problems Skylark-native.*
-
-**Viability: ruled out by evidence.** The evaluation's blank columns
-on Skylark for orchestration (0), integration & merge (0), and
-monitoring & recovery (0) are too wide to close by in-house work at
-reasonable speed. Pursuing this path is a choice to accept
-ENG-180-class failures indefinitely.
-
-### Option 3b (the "twist")
-
-*Gas Town as runtime, Skylark as domain, Triad mined for three specific
-discipline patterns: (1) hard-capped decomposition cascade with
-schema-level depth limits, (2) `round`-accounted 2-cycle negotiation
-primitive, (3) `## Rationale` / decision-capture artifact sections.*
-
-Each pattern directly addresses a known gap in the Gas Town + Skylark
-combination:
-
-- The decomposition cascade addresses **Gas Town's Req 7 MISSING**
-  (compaction as decomposition trigger) by replacing it with
-  schema-enforced depth caps before any dispatch.
-- `round` accounting addresses **Gas Town's Req 5 MISSING** (bounded
-  revision loops — Gas Town's gate retry loop is unbounded).
-- `## Rationale` sections address **Gas Town's Req 11 PARTIAL**
-  (decision capture — fields exist, structure is not enforced).
-
-These are small, additive patterns. They do not require porting Triad
-code; they require adding discipline to Skylark's artifact conventions
-and Gas Town's formula authoring.
-
-## 6. The pivotal unresolved question
-
-**Can Gas Town's Polecat dispatch accept an arbitrary full prompt
-body?**
-
-The evidence says no — not as a first-class channel. The available
-channels are:
-
-1. `gt sling --args` — task-specific string arguments
-2. `gt sling --message` — a task message
-3. `gt sling --stdin` — stdin-piped content
-4. `gt sling --var KEY=VALUE` — formula-variable injection
-5. Per-role directives in `<townRoot>/directives/<role>.md`
-6. Go template substitution in `internal/templates/roles/polecat.md.tmpl`
-
-Skylark's vocabulary-routed expert generation constructs a full prompt
-body per task — potentially several thousand tokens of bespoke expert
-instructions. Routing that through a template variable is possible in
-principle; in practice it depends on:
-
-- Whether the template engine tolerates a large variable without
-  truncation or encoding weirdness.
-- Whether the resulting Polecat session receives the expanded prompt
-  *as its system instruction* or as user content — these are not
-  interchangeable for expert behavior.
-- Whether Gas Town's cache posture (it pays for prompt caching) remains
-  intact under per-task prompt variation.
-- Whether the UX of "Skylark generates the expert, pipes it to
-  `gt sling`, waits for the Polecat to start" is operationally clean.
-
-**The resolution is a small trial, not a paper eval.** A single task
-dispatched this way answers most of the above. This is the first
-concrete trial-scope line item.
-
-## 7. Triad salvage list
-
-In rough order of value-to-effort:
-
-1. **`round`-accounted 2-cycle revision cap** (from Triad's review
-   model). One field on a review artifact, one assertion at the gate
-   handler. Directly addresses Gas Town's unbounded retry loop.
-2. **`## Rationale`, `## Context`, `## Open Questions` sections** on
-   specs, plans, and decision beads. Enforceable via formula lint or
-   gate check.
-3. **Hard schema-depth cap on decomposition** (Proposal→Project→Task
-   as the maximum hierarchy). Enforceable as a Beads schema constraint
-   on the `parent`/`spec_id` graph.
-4. **Sonnet-as-sizing-sentinel** convention for worker dispatch. If a
-   task cannot complete in one Sonnet window, the task is mis-sized.
-   Cleaner than any LOC cap.
-5. **Per-task cost telemetry fields** (`actual_tokens`,
-   `actual_duration_minutes`) rolled up to project-level tables. Gas
-   Town has `agent.usage` events but no rollup artifact.
-6. **`directive` human-override disposition** on review verdicts. Both
-   Skylark and Gas Town have implicit human override; neither names it.
-7. **`/triad:status` report shape** — a single terse human-readable
-   pipeline-state summary. `gt feed` is richer but not tuned for the
-   "what's going on right now" one-screen glance.
-8. **End-to-End Validation Flows** at project-complete (running
-   integration tests against a live stack before closing the project).
-   Complements Refinery's pre-merge CI.
-
-Patterns *not* to salvage:
-
-- Persistent per-role tmux sessions (the retirement cause).
-- Filesystem-inbox message coordination (fragile, hard to debug at
-  scale — documented in Triad README).
-- Role-pair negotiation semantics (superseded by Gas Town's escalation
-  chain).
-
-## 8. Shared blind spots across all three frameworks
-
-Worth flagging as candidate spec revisions or as known-unknown risks
-that no framework solves today:
-
-- **No framework enforces a context-utilization budget.** All three
-  rely on host-harness defaults. ENG-180 is evidence the defaults do
-  not hold.
-- **No framework auto-converts recurring review findings into lint
-  rules.** This is ENG-180's suggestion #5 and remains an aspirational
-  target.
-- **No framework does pre-dispatch plan-vs-code drift validation.** A
-  grep of planned signatures against current code before worker
-  dispatch would have saved ENG-180's two dead-end tasks.
-- **No framework has first-class spec/plan/review artifact types.**
-  Gas Town has a polymorphic `issues` table; Skylark uses file
-  conventions; Triad has type-specific templates but no shared header.
-
-Any of these is a potential differentiator to build on top of whichever
-substrate is chosen.
-
-## 9. Trial scope (what the paper eval cannot answer)
-
-Before committing to Option 3 / 3b, the following require hands-on
-testing:
-
-1. **Prompt-channel trial.** Dispatch one Polecat from Skylark where
-   Skylark generates a full expert prompt body and routes it through
-   `gt sling --var`. Confirm the Polecat receives it correctly as
-   system instruction, not user content, and that the session starts
-   with expected behavior. Measure any token / cache impact.
-2. **Panel-review-inside-a-Polecat trial.** Can a Polecat dispatched
-   by Skylark internally run Skylark's panel-review flow (multiple
-   expert sub-agents) without Gas Town constraining subagent
-   dispatch? Investigate whether Polecats can spawn their own
-   subagents at all, and how that interacts with Gas Town's
-   Refinery/Witness lifecycle assumptions.
-3. **Artifact import trial.** Import an existing Skylark spec + plan
-   into Beads, verify query-ability (`bd query`, `bd graph`), and
-   measure the fidelity of the conversion (do `## Rationale` sections
-   survive? Do cross-references resolve?).
-4. **Refinery-under-Skylark trial.** Run one Skylark task to completion
-   with the output landing via Gas Town's Refinery queue. Confirm
-   bisecting behavior, CI-on-merged-state, and that the
-   `polecat/<name>/<issue-id>` branch convention is compatible with
-   Skylark's expectations.
-5. **Witness/escalation under a Skylark-generated expert trial.**
-   Verify that stuck-worker detection and escalation still work when
-   the worker's role prompt was injected at dispatch rather than
-   loaded from a role template.
-6. **Cost / context measurement.** Measure a complete pipeline run on
-   the combined stack — token spend per stage, compaction count,
-   context high-water mark per worker. Compare to Skylark-only baseline
-   from the ENG-180 retrospective (four-plus compactions, hand-written
-   150-300 line resumption notes).
-
-## 10. Recommended next session shape
-
-1. Read this synthesis in full.
-2. Decide: do we pursue Option 3, Option 3b, or a different path?
-3. If Option 3/3b: scope the prompt-channel trial first. It answers
-   the pivotal question and unblocks everything downstream.
-4. Task atomicity spec work remains a separate workstream (per earlier
-   scoping decision) but should assume Option 3/3b context when it
-   resumes — i.e., atomicity should be expressed as Beads schema
-   constraints + Skylark triage logic, not as standalone artifacts.
+The first-pass synthesis framed the decision as "adopt Gas Town, stay
+standalone, or combine." The second pass introduces a third path —
+**compose a stack from small, focused tools** — and evaluates six
+candidate tools against the same criteria used for the three-framework
+comparison. This pass narrows the decision to two concrete architectures,
+both viable, with different trade-off profiles.
+
+**Two paths survive:**
+
+- **Path A — Gas Town as monolithic runtime** with Skylark as domain
+  layer and Triad-mined discipline patterns. This was the first-pass
+  recommendation. It remains contingent on the prompt-channel question
+  (can `gt sling --var` carry a full vocabulary-routed expert prompt?).
+
+- **Path B — Composed stack** assembled from XState (orchestration) +
+  Taskmaster AI (task substrate/decomposition) + Claude Code CLI
+  (workers) + Skylark review layer (review/gating) + OpenLLMetry +
+  Langfuse (monitoring) + context-mode (context engineering). Each
+  component owns one pipeline stage with file-based contracts between
+  them. No monolithic dependency.
+
+**The composable path is now concrete, not theoretical.** Six tools
+evaluated against the same 9-domain criteria produce a combined score
+that matches or exceeds Gas Town in five domains, while preserving the
+"swap any single layer" property that Gas Town does not offer.
+
+**What changed from first pass:**
+- Gas Town's prompt-channel limitation is no longer the *only* blocker.
+  The composable path sidesteps it entirely — Skylark generates expert
+  prompts and passes them directly to Claude Code CLI workers.
+- Five critical gaps identified: pre-dispatch context estimator, typed
+  review verdict schema, supervision daemon, worker instrumentation
+  bridge, and cross-session trace ID standard. All are small builds
+  (~50-200 lines each), not framework-scale efforts.
+- OpenLLMetry cannot instrument Claude Code CLI processes. This is an
+  architectural constraint that affects both paths equally.
+
+**Recommendation direction:** Path B (composed stack) as the primary
+pursuit, with Gas Town's Beads substrate as the contingency if
+Taskmaster proves insufficient at scale. Rationale: Path B preserves
+composability and avoids the coupling risk the user identified as a
+core concern, while covering 7 of 9 domains with production-quality
+tools. Path A remains viable if Gas Town's prompt channel opens up
+and the coupling trade-off is accepted.
+
+---
+
+## 2. Methodology
+
+### First pass (three frameworks)
+Nine framework-agnostic domain specs with 117 testable requirements.
+Twenty-seven independent Opus agents evaluated Skylark, Gas Town, and
+Triad — one per framework per domain. Reports in `reviews/{skylark,
+gastown,triad}/`.
+
+### Second pass (composable tools)
+Six additional tools evaluated against the same criteria, scoped to
+only their applicable domains. Nine reports from six Opus agents
+reading cloned source code. Reports in `reviews/{xstate,taskmaster,
+restate,openllmetry,langfuse,context-mode}/`. A landscape scan
+(`composable-toolchain-report.md`) preceded the evaluations to
+identify candidates.
+
+---
+
+## 3. Three-framework comparison (first-pass findings, preserved)
+
+### Scorecard
+
+| Domain | Skylark | Gas Town | Triad |
+|---|---:|---:|---:|
+| 01 Orchestration model | 0 | 7 | 0 |
+| 02 Worker model | 4 | 7 | 3 |
+| 03 Artifact & task substrate | 3 | 11 | 5 |
+| 04 Review & gate model | 8 | 3 | 6 |
+| 05 Context engineering | 2 | 4 | 0 |
+| 06 Task decomposition & sizing | 4 | 1 | 6 |
+| 07 Integration & merge model | 0 | 5 | 0 |
+| 08 Monitoring & recovery | 0 | 10 | 0 |
+| 09 Environment isolation | 1 | 4 | 2 |
+| **MEETS total** | **22** | **52** | **22** |
+
+Gas Town wins 7/9 domains (52 MEETS). Skylark owns review/gating (8).
+Triad owns decomposition discipline (6). Full per-domain analysis in
+first-pass synthesis and individual review files.
+
+### Topline characterization (unchanged)
+
+- **Gas Town** = runtime substrate. Mature Go codebase, Dolt-backed
+  Beads, Bors merge queue, OTEL telemetry, four-tier supervisor. Does
+  not teach you to size a task or generate a per-task expert.
+- **Skylark** = process discipline. Vocabulary-routed experts, bounded
+  panel review, risk-tiered gates. High-quality output when the pipeline
+  survives; the pipeline does not survive reliably.
+- **Triad** = retired decomposition cascade. The discipline it encoded
+  (depth-capped decomposition, round-accounted gates, decision capture,
+  Sonnet-as-sizing-sentinel) is salvageable. The orchestration layer is
+  not.
+
+---
+
+## 4. Composable toolchain evaluation
+
+### 4.1 Scorecard
+
+| Tool | Domain | M | P | DNM | Role |
+|---|---|---:|---:|---:|---|
+| XState | 01 Orchestration | 4 | 4 | 2 | Deterministic pipeline state machine |
+| XState | 05 Context eng. | 1 | 3 | 0 | State serialization / resume |
+| XState | 08 Monitoring | 0 | 3 | 1 | Loop detection primitives |
+| Restate | 01 Orchestration | 5 | 4 | 1 | Durable execution (alternative) |
+| Taskmaster | 03 Artifact/task | 4 | 5 | 4 | Task tracking, querying, MCP |
+| Taskmaster | 06 Decomposition | 3 | 7 | 4 | DAG decomposition, sizing |
+| OpenLLMetry | 08 Monitoring | 2 | 3 | 8 | OTel instrumentation layer |
+| Langfuse | 08 Monitoring | 2 | 5 | 6 | Observability backend |
+| context-mode | 05 Context eng. | 3 | 6 | 4 | Context conservation / handoff |
+
+### 4.2 Per-tool findings
+
+**XState v5** — Excellent state machine primitives: declarative JSON
+configs, typed transitions with guards, parallel states, actor model for
+worker dispatch, `getPersistedSnapshot()`/`restoreSnapshot()` round-trip
+for crash recovery. DOES NOT MEET on DAG dependency tracking (no built-in
+scheduler — you implement dispatch logic via guards and events) and
+crash-safe transitions (no transactional writes — you build persistence).
+The `@statelyai/agent` LLM integration lives in a separate repo and was
+not evaluated. The "Deterministic Core, Agentic Shell" pattern (blog.
+davemo.com, Feb 2026) describes the exact architecture: LLM tool
+availability constrained by current machine state.
+
+**Restate** — Stronger than XState on durability (5 vs 4 MEETS on domain
+01). Crash-safe transitions, disk-first state, and resume semantics are
+infrastructure-level guarantees, not application code. DOES NOT MEET on
+declarative pipeline definition (code-first, no YAML/TOML). The
+fundamental trade-off: **Restate gives you durability for free but costs
+you a running server (RocksDB, Bifrost, partition management). XState
+gives you the pipeline abstraction but you build persistence.** For a
+single-developer pipeline, XState + JSON-file persistence is lighter.
+Restate becomes the right call if the pipeline scales to fleet operations.
+
+**Taskmaster AI** — Solid task substrate: atomic writes with cross-process
+locking, DAG decomposition with dependency validation and topological
+ordering, status rollup from subtasks to parents, complexity analysis for
+sizing heuristics. MCP server (36 tools, 7 core) is the integration
+surface. DOES NOT MEET on: specs/plans/reviews as first-class types
+(tasks only), decision capture (no rationale fields), pre-dispatch code
+validation, context-window sizing, and import from external systems. The
+internal `WorkflowOrchestrator` is nearly an XState-equivalent state
+machine — useful architectural reference.
+
+**OpenLLMetry** — Full OTEL-native instrumentation for Anthropic SDK:
+`gen_ai.*` semantic conventions, prompt caching tokens
+(`cache_read.input_tokens`, `cache_creation.input_tokens`), thinking
+blocks, tool calls, streaming support. **Critical constraint: cannot
+instrument Claude Code CLI processes (`claude --bare -p`).** Only works
+by monkey-patching the Python `anthropic` SDK. No cost calculation —
+only raw token counts. The supervision/recovery requirements (8 of 13)
+are categorically out of scope for an instrumentation library.
+
+**Langfuse** — Observability backend with OTLP ingestion, Anthropic cost
+tracking (including prompt cache pricing tiers), trace/span/generation
+hierarchy, web dashboard, evaluation/scoring features. Session model can
+represent our pipeline (session=pipeline run, trace=stage,
+observation=task). Self-hosting: 6 containers (Postgres, ClickHouse,
+Redis, MinIO, web, worker) — moderate but feasible. The supervision/
+recovery requirements are out of scope, but Langfuse provides the data
+layer that would enable building them externally.
+
+**context-mode** — Context *conservation* tool, not context *management*
+tool. Excels at: disk-canonical state via SQLite, predecessor query via
+FTS5/BM25 search (a new session can ask "what did the previous session
+decide about X?"), auto-persistence at all lifecycle events (SessionStart,
+PreToolUse, PostToolUse, PreCompact). The "98% context reduction" claim
+is real for analysis workloads (sandboxing tool output). DOES NOT MEET on
+context budget monitoring (zero awareness of utilization percentages),
+phase-boundary splits (not its job), and compaction-as-failure-signal
+(treats compaction as normal).
+
+### 4.3 XState vs Restate decision
+
+For our use case (single-developer, file-based artifacts, git worktrees),
+**XState is the better fit**:
+
+| Criterion | XState | Restate |
+|---|---|---|
+| Operational overhead | Zero (library) | Server (RocksDB, Bifrost) |
+| Pipeline abstraction | Native (statecharts) | Build it yourself |
+| Crash recovery | Build it (JSON files) | Free (durable execution) |
+| Parallel fan-out | Native (parallel states) | Native (async handlers) |
+| Composability | Maximum (pure library) | Good (single binary) |
+| Scaling to fleet | Rebuild persistence | Already there |
+
+**Decision: XState now, Restate as upgrade path if fleet scale is needed.**
+
+---
+
+## 5. The composed stack — working in concert
+
+### 5.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USER / ENTRY POINT                          │
+│  /skylark:implement <input>                                     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ input file / description / idea
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  LAYER 1: TRIAGE + RISK ROUTING              (Skylark skills)   │
+│                                                                 │
+│  Classify input type, detect existing artifacts, assess risk.   │
+│  Output: risk level, input type, pipeline path.                 │
+│                                                                 │
+│  Reads: Taskmaster tasks.json, docs/specs/*, git log            │
+│  Writes: triage result → XState event                           │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ { risk, type, path[] }
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  LAYER 2: ORCHESTRATOR                       (XState v5)        │
+│                                                                 │
+│  Deterministic state machine. JSON config defines the pipeline  │
+│  DAG. Receives events from every other layer, advances state,   │
+│  persists snapshots to .skylark/state.json after each           │
+│  transition. Never does domain reasoning.                       │
+│                                                                 │
+│  States: idle → triage → prepare → brainstorm → spec_review →  │
+│          write_plan → plan_review → develop → finish → done     │
+│                                                                 │
+│  On crash: reads .skylark/state.json, calls restoreSnapshot(),  │
+│  resumes at last completed transition.                           │
+│                                                                 │
+│  Reads: .skylark/state.json, Taskmaster task statuses           │
+│  Writes: .skylark/state.json, dispatch commands                 │
+└────────┬──────────┬──────────┬──────────┬───────────────────────┘
+         │          │          │          │
+    ┌────┘    ┌─────┘    ┌─────┘    ┌─────┘
+    ▼         ▼          ▼          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  LAYER 3: TASK SUBSTRATE + DECOMPOSITION     (Taskmaster AI)    │
+│                                                                 │
+│  MCP server (7 core tools) providing:                           │
+│  - PRD → tasks.json decomposition with DAG dependencies         │
+│  - Complexity analysis per task                                 │
+│  - Status tracking with rollup to parents                       │
+│  - Dependency-aware sequencing (topological order)              │
+│                                                                 │
+│  The orchestrator queries Taskmaster via MCP to determine       │
+│  which tasks are ready (deps satisfied, status=pending).        │
+│  Workers update task status via MCP on completion.              │
+│                                                                 │
+│  Reads: tasks.json, PRD/spec input                              │
+│  Writes: tasks.json, individual task files                      │
+│  MCP interface: get_task, update_task, next_task, etc.          │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ task spec (JSON)
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  LAYER 4: EXPERT GENERATION + REVIEW         (Skylark skills)   │
+│                                                                 │
+│  This is what Skylark uniquely owns. Nothing else does it.      │
+│                                                                 │
+│  PRE-DISPATCH (for standard+ risk):                             │
+│  - Read task spec from Taskmaster                               │
+│  - Generate vocabulary-routed expert prompt (15-30 domain terms │
+│    in 3-5 clusters, anti-patterns, identity — the full          │
+│    expert-prompt-generator pipeline from _shared/)              │
+│  - Write expert prompt to .skylark/experts/TASK-NNN.md          │
+│  - Pre-dispatch drift validation: grep planned signatures       │
+│    against current code. Block dispatch if drift detected.      │
+│                                                                 │
+│  POST-IMPLEMENTATION (for standard+ risk):                      │
+│  - Spec compliance solo review ("do not trust the implementer") │
+│  - Vocabulary-routed code quality panel review                  │
+│  - Typed verdict: SHIP / REVISE / RETHINK                       │
+│  - Hard 2-round cap, then escalate to user                      │
+│                                                                 │
+│  Reads: task spec, codebase, _shared/ methodology               │
+│  Writes: expert prompts, review reports, verdicts               │
+└──────────┬──────────────────────────────────┬───────────────────┘
+           │ expert prompt + task spec        │ verdict
+           ▼                                  │
+┌──────────────────────────────────────┐      │
+│  LAYER 5: WORKER EXECUTION           │      │
+│  (Claude Code CLI + git worktrees)   │      │
+│                                      │      │
+│  Per task:                           │      │
+│  1. git worktree add (isolated)      │      │
+│  2. Write expert prompt as           │      │
+│     .claude/CLAUDE.md in worktree    │      │
+│  3. claude --bare -p "{task}"        │      │
+│     --output-format json             │      │
+│     --max-turns 20                   │      │
+│  4. Parse JSON result                │      │
+│  5. Return structured status:        │      │
+│     DONE / DONE_WITH_CONCERNS /      │      │
+│     NEEDS_CONTEXT / BLOCKED          │      │
+│                                      │      │
+│  Reads: task spec, expert CLAUDE.md  │      │
+│  Writes: code changes in worktree,   │      │
+│          result.json                 │      │
+└──────────────────┬───────────────────┘      │
+                   │ result.json              │
+                   ▼                          │
+           ┌───────────────┐                  │
+           │ Route by risk │◄─────────────────┘
+           │ and verdict   │
+           └───────┬───────┘
+                   │
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+  MERGE         REVISE        ESCALATE
+  (finish)      (re-dispatch)  (to user)
+```
+
+### 5.2 Interface contracts
+
+Each boundary has a defined contract. These are the load-bearing
+interfaces — the tools are replaceable, the contracts are not.
+
+#### Contract 1: Triage → Orchestrator
+
+```yaml
+# Triage emits an XState event:
+type: "TRIAGE_COMPLETE"
+payload:
+  input_type: spec | plan | task | raw-idea | raw-problem | external-ref
+  risk: trivial | standard | elevated | critical
+  path: [prepare, develop, finish]    # stages to execute
+  artifact_id: SPEC-001              # if existing artifact found
+  artifact_path: docs/specs/...
+  external_ref: ENG-142              # if applicable
+  decompose: false
+```
+
+#### Contract 2: Orchestrator → Taskmaster
+
+```yaml
+# Orchestrator queries Taskmaster MCP for next dispatchable task:
+mcp_tool: next_task
+filter:
+  status: pending
+  dependencies_met: true
+
+# Taskmaster returns:
+task:
+  id: 42
+  title: "Add FTS5 virtual table for search"
+  description: "..."
+  dependencies: [40, 41]
+  subtasks: []
+  status: pending
+  priority: high
+  details: "..."                      # full implementation details
+  testStrategy: "..."
+  acceptanceCriteria: "..."
+  relevantFiles:
+    - src/db/search.ts
+    - src/db/schema.ts
+```
+
+#### Contract 3: Orchestrator → Skylark Expert Generation
+
+```yaml
+# Orchestrator passes task to Skylark for expert prompt generation:
+type: "GENERATE_EXPERT"
+payload:
+  task: { ... }                       # full task from Taskmaster
+  risk: elevated
+  codebase_context:
+    entry_points: [src/db/search.ts]
+    recent_changes: [...]             # from git log
+    related_tests: [test/search.test.ts]
+
+# Skylark returns:
+expert_prompt: |
+  You are a senior PostgreSQL/SQLite engineer specializing in
+  full-text search. Domain vocabulary: FTS5 virtual table,
+  bm25() ranking, column weight boosting, ...
+  [full vocabulary-routed prompt body]
+drift_check: pass | fail              # pre-dispatch code validation
+drift_details: null | "buildServer signature changed since plan"
+```
+
+#### Contract 4: Expert Generation → Worker
+
+```yaml
+# Worker receives:
+worktree_path: /tmp/task-42-fts5-search
+claude_md: .claude/CLAUDE.md          # expert prompt written here
+task_prompt: |
+  Implement FTS5 virtual table for search.
+  Acceptance criteria: ...
+  Files to modify: ...
+  Step-by-step instructions: ...
+flags:
+  --bare
+  --output-format json
+  --max-turns 20
+
+# Worker returns (parsed from Claude Code JSON output):
+result:
+  status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
+  session_id: "abc123"
+  total_cost_usd: 0.42
+  duration_ms: 180000
+  num_turns: 12
+  files_changed: [src/db/search.ts, test/search.test.ts]
+  concerns: null | "FTS5 tokenizer choice may need tuning"
+```
+
+#### Contract 5: Worker → Review Layer
+
+```yaml
+# Review layer receives:
+worktree_path: /tmp/task-42-fts5-search
+task_spec: { ... }                    # original task
+worker_result: { ... }               # from Contract 4
+risk: elevated
+
+# Review layer returns:
+verdict: SHIP | REVISE | RETHINK
+round: 1
+findings:
+  - severity: blocking
+    description: "Missing index on created_at column"
+    file: src/db/schema.ts
+    line: 42
+  - severity: suggestion
+    description: "Consider column weight tuning for title vs body"
+report_path: docs/reports/R-20260415-panel-fts5.md
+```
+
+#### Contract 6: Worker → Telemetry
+
+```yaml
+# OpenLLMetry captures per-API-call (if using SDK directly):
+span:
+  name: "anthropic.messages.create"
+  attributes:
+    gen_ai.system: "anthropic"
+    gen_ai.request.model: "claude-sonnet-4-6"
+    gen_ai.usage.input_tokens: 12400
+    gen_ai.usage.output_tokens: 3200
+    gen_ai.usage.cache_read.input_tokens: 8000
+    gen_ai.usage.cache_creation.input_tokens: 4400
+    gen_ai.conversation.id: "task-42"
+
+# Langfuse receives via OTLP and provides:
+# - Per-task cost rollup
+# - Per-stage cost rollup
+# - Pipeline-run cost total
+# - Dashboard visualization
+# - Anomaly detection (configurable)
+
+# NOTE: Claude Code CLI workers cannot be instrumented by
+# OpenLLMetry directly. Instrumentation options:
+# (a) Parse Claude Code's --output-format json for cost/token data
+# (b) Build a thin wrapper that logs to Langfuse's REST API
+# (c) Use Claude Agent SDK instead of CLI for workers (enables
+#     direct SDK instrumentation)
+```
+
+#### Contract 7: Session → context-mode
+
+```yaml
+# context-mode hooks fire automatically:
+#
+# SessionStart:
+#   - Load previous session state from SQLite
+#   - Inject relevant predecessor decisions via FTS5/BM25
+#
+# PostToolUse:
+#   - Persist tool results, edits, decisions to SQLite
+#   - Sandbox large tool outputs (98% reduction)
+#
+# PreCompact:
+#   - Generate priority-tiered XML snapshot (≤2KB)
+#   - Persist all uncommitted state to SQLite
+#   - Log compaction as a signal (consumed by orchestrator)
+#
+# The orchestrator treats compaction events as decomposition
+# triggers — if a worker hits PreCompact, the task was too large.
+```
+
+### 5.3 What each component provides vs. what it doesn't
+
+| Component | Provides | Does NOT provide |
+|---|---|---|
+| **XState** | Pipeline state machine, typed transitions, parallel fan-out, JSON-serializable snapshots, resume from crash | DAG scheduler, transactional writes, monitoring, worker dispatch infrastructure |
+| **Taskmaster** | Task CRUD, DAG decomposition, dependency tracking, status rollup, MCP interface, complexity analysis | Spec/plan/review types, decision capture, pre-dispatch validation, context sizing, risk routing |
+| **Skylark** | Vocabulary-routed experts, panel review, risk-tiered gating, typed verdicts, triage/classification | Orchestration, task tracking, monitoring, merge queue, context management |
+| **Claude Code CLI** | Worker execution, git worktrees, tool sandboxing, structured JSON output | Telemetry emission, context budget enforcement, session continuity |
+| **OpenLLMetry** | OTEL spans for Anthropic SDK calls, token/cache tracking | CLI worker instrumentation, cost calculation, dashboards, supervision |
+| **Langfuse** | Trace visualization, cost tracking, dashboards, evaluation/scoring, OTLP ingestion | Fleet supervision, crash recovery, escalation, stall detection |
+| **context-mode** | Context conservation, predecessor query (FTS5), auto-persistence, tool-result sandboxing | Context budget monitoring, phase-boundary enforcement, compaction-as-failure |
+
+### 5.4 What must be built (the glue)
+
+Five components need to be built to connect these tools into a working
+pipeline. None is a framework-scale effort.
+
+1. **XState pipeline definition + persistence layer** (~200 lines).
+   The state machine config (JSON) defining the pipeline DAG, plus a
+   thin persistence wrapper that writes `getPersistedSnapshot()` to
+   `.skylark/state.json` after each transition and reads it on startup.
+   This is the orchestrator's entire codebase.
+
+2. **Typed verdict schema** (~30 lines JSON Schema). The contract
+   between Skylark's review layer and the orchestrator. Defines the
+   SHIP/REVISE/RETHINK verdict format, finding severities, round
+   counting, and escalation conditions. Consumed by the orchestrator
+   to decide: advance pipeline, re-dispatch worker, or pause for user.
+
+3. **Pre-dispatch drift validator** (~50 lines shell/Python). Greps
+   planned function signatures, file paths, and import statements
+   against current code before dispatching a worker. Returns pass/fail.
+   The specific fix for ENG-180's two dead-end tasks.
+
+4. **Worker telemetry bridge** (~100 lines). Parses Claude Code CLI's
+   `--output-format json` response for `total_cost_usd`, `duration_ms`,
+   `num_turns`, and writes structured events to Langfuse's REST API.
+   Bridges the gap between CLI workers and the observability stack.
+   Alternative: use Claude Agent SDK for workers instead of CLI,
+   enabling direct OpenLLMetry instrumentation.
+
+5. **Context budget monitor** (~80 lines shell hooks). Session-kit
+   style hooks that monitor context utilization and emit warnings at
+   40%, 60%, 70%. At 70%, triggers handoff instead of compaction.
+   Complements context-mode's conservation layer with the budget
+   enforcement it lacks.
+
+**Total estimated glue: ~460 lines.** Compare to building a full
+orchestration engine, artifact substrate, merge queue, telemetry
+layer, and supervisor chain from scratch (~Option 4 from first pass).
+
+---
+
+## 6. Option space (updated)
+
+### Path A — Gas Town as monolithic runtime
+
+*Gas Town provides orchestration, artifact substrate, merge queue,
+monitoring, and environment isolation. Skylark provides review
+discipline and expert generation. Triad patterns layered on top.*
+
+**Strengths:**
+- 52 MEETS across all domains — most complete single system
+- Refinery merge queue (Bors-style bisecting) — no composable
+  equivalent exists
+- Four-tier supervisor chain — production-grade monitoring
+- Beads substrate — the richest artifact model evaluated
+
+**Weaknesses:**
+- Coupling: replacing any single layer means fighting the whole system
+- Prompt-channel question still unresolved — Skylark's expert
+  generation may not fit Gas Town's dispatch model
+- Operational overhead: Dolt database, Go binaries, Mayor LLM session
+- Design philosophy mismatch: Gas Town targets fleet-scale (20-50
+  agents); our use case is single-developer
+
+**Contingent on:** prompt-channel trial (can `gt sling --var` carry
+a full vocabulary-routed expert prompt body cleanly?)
+
+### Path B — Composed stack
+
+*XState orchestrator + Taskmaster tasks + Claude Code CLI workers +
+Skylark review layer + OpenLLMetry/Langfuse monitoring + context-mode.
+~460 lines of glue code.*
+
+**Strengths:**
+- Each layer independently replaceable (Unix philosophy)
+- No prompt-channel question — Skylark generates expert prompts and
+  writes them directly as CLAUDE.md files in worker worktrees
+- No operational overhead beyond Langfuse's 6 containers (optional —
+  can start with just JSON cost logs)
+- File-based contracts between every layer — debuggable, auditable,
+  git-native
+- Incremental adoption: start with XState + Taskmaster + Skylark
+  review, add monitoring/context layers later
+
+**Weaknesses:**
+- No merge queue (GitHub's native merge queue is limited; no OSS
+  bisecting alternative exists)
+- No fleet supervision daemon (must be built)
+- Context budget enforcement (must be built with session-kit hooks)
+- More assembly required — 5 glue components to build
+- Taskmaster lacks spec/plan/review as first-class types (Skylark's
+  artifact conventions fill this gap but aren't queryable without LLM)
+
+**Not contingent on any unresolved question.** Every component has
+been evaluated against source code. The unknowns are integration
+quality, not feasibility.
+
+### Path C — Hybrid (cherry-pick Gas Town components)
+
+*Use Gas Town's Beads substrate (replacing Taskmaster) and/or Refinery
+merge queue, but keep XState as orchestrator and Skylark as review
+layer.*
+
+This combines the strongest artifact model (Beads: 11 MEETS on domain
+03) with the composable orchestrator, but introduces the Dolt
+operational dependency and couples the task layer to Gas Town.
+
+**Viable as an upgrade from Path B** if Taskmaster proves insufficient
+at scale (particularly around queryability and atomic writes under
+concurrent workers).
+
+### Comparison matrix
+
+| Criterion | Path A (Gas Town) | Path B (Composed) | Path C (Hybrid) |
+|---|---|---|---|
+| Composability | Low | **High** | Medium |
+| Merge queue | **Refinery (bisecting)** | GitHub native (basic) | Refinery |
+| Monitoring | **Four-tier supervisor** | Langfuse + build daemon | Langfuse + build daemon |
+| Expert generation fit | Unresolved | **Native** | **Native** |
+| Operational overhead | High (Dolt, Go, Mayor) | Low-Medium (Langfuse optional) | Medium (Dolt) |
+| Artifact model richness | **Beads (11 MEETS)** | Taskmaster (4 MEETS) + Skylark files | Beads |
+| Assembly required | Low (adopt framework) | **Medium (~460 lines glue)** | Medium |
+| Layer replaceability | Low | **High** | Medium |
+| Fleet scaling path | Built in | Swap XState → Restate | Partial |
+| Blocking questions | Prompt channel | None | Dolt operational fit |
+
+---
+
+## 7. Triad salvage list (applies to both paths)
+
+Unchanged from first pass. These discipline patterns address gaps in
+both Gas Town and the composed stack:
+
+1. **`round`-accounted 2-cycle revision cap** — already in Skylark's
+   review layer; formalize in the typed verdict schema.
+2. **`## Rationale` / decision capture sections** — enforceable in
+   Skylark's artifact conventions or as Taskmaster task metadata.
+3. **Hard schema-depth cap** (Project→Epic→Task maximum) — enforceable
+   in Taskmaster's decomposition or XState's state machine.
+4. **Sonnet-as-sizing-sentinel** — if task can't complete in one Sonnet
+   window, task is mis-sized. Cleaner than LOC caps.
+5. **Per-task cost telemetry** — worker telemetry bridge (glue #4)
+   captures this; Langfuse rolls it up.
+6. **`directive` human-override disposition** on review verdicts —
+   add to typed verdict schema.
+7. **End-to-End Validation Flows** at project-complete — add as a
+   `finish` stage step in the XState pipeline definition.
+
+---
+
+## 8. Shared blind spots (what no tool solves)
+
+Updated from first pass. Two resolved, three remain, one new:
+
+- ~~No framework enforces context budget~~ → **Addressed by
+  context-mode + session-kit hooks** (glue #5). PARTIAL coverage.
+- ~~No framework does pre-dispatch drift validation~~ → **Addressed
+  by glue #3** (drift validator). Directly fixes ENG-180's dead-end
+  tasks.
+- **No tool auto-converts recurring review findings into lint rules.**
+  This is ENG-180's suggestion #5 and remains aspirational.
+- **No tool provides an agent-aware merge queue.** The AgenticFlict
+  dataset (arXiv:2604.03551) documents 336K+ conflict regions in
+  agent-generated PRs. GitHub's native queue has no agent-specific
+  differentiation.
+- **No cross-session trace ID standard exists.** Langfuse, OpenLLMetry,
+  and Claude Code each define their own session concept. The worker
+  telemetry bridge (glue #4) must map between them.
+- **NEW: OpenLLMetry cannot instrument Claude Code CLI processes.**
+  This affects both paths equally. Options: (a) parse CLI JSON output,
+  (b) use Claude Agent SDK instead of CLI for workers, (c) build a
+  thin Langfuse REST wrapper.
+
+---
+
+## 9. Trial scope (updated for both paths)
+
+### Path B trials (composed stack) — recommended first
+
+These are ordered by dependency: each trial unblocks the next.
+
+1. **XState pipeline prototype.** Define the pipeline state machine in
+   JSON. Wire `getPersistedSnapshot()`→JSON file→`restoreSnapshot()`.
+   Dispatch one task to a Claude Code CLI worker in a worktree. Verify
+   crash recovery (kill mid-task, resume). **Validates:** orchestrator
+   viability, persistence round-trip, worker dispatch model.
+
+2. **Taskmaster integration.** Connect XState to Taskmaster MCP.
+   Decompose a real spec into tasks. Have the orchestrator query
+   Taskmaster for the next ready task and dispatch it. Verify status
+   rollup on completion. **Validates:** MCP integration, task substrate
+   adequacy, contract between layers 2 and 3.
+
+3. **Expert generation + review loop.** Generate a vocabulary-routed
+   expert prompt for a task, write it as CLAUDE.md in the worktree,
+   dispatch worker, run Skylark's panel review on the result, feed
+   verdict back to orchestrator. **Validates:** the full inner loop,
+   expert-prompt-as-CLAUDE.md pattern, verdict→orchestrator contract.
+
+4. **Telemetry pipeline.** Instrument one pipeline run with the worker
+   telemetry bridge writing to Langfuse. Verify per-task cost
+   attribution, trace hierarchy, dashboard rendering. **Validates:**
+   observability stack, cost tracking accuracy.
+
+5. **Context engineering.** Run a multi-task pipeline with context-mode
+   active. Verify predecessor query works across task boundaries.
+   Measure context utilization per worker. Test the budget monitor
+   hooks. **Validates:** context conservation, handoff quality.
+
+6. **Full pipeline run.** End-to-end on a real medium-complexity issue.
+   Measure: total cost, per-stage cost, compaction count, context
+   high-water mark per worker, number of review rounds, wall-clock
+   time. Compare to ENG-180 baseline. **Validates:** the whole stack.
+
+### Path A trials (Gas Town) — if Path B proves insufficient
+
+Unchanged from first pass: prompt-channel trial, panel-review-inside-
+Polecat trial, artifact import trial, Refinery trial, Witness trial,
+cost/context measurement.
+
+---
+
+## 10. Recommendation
+
+**Pursue Path B (composed stack) as the primary path.** Begin with
+trial #1 (XState pipeline prototype).
+
+**Rationale:**
+- No blocking questions. Every component evaluated against source code.
+- Preserves composability — the core design principle the user
+  identified.
+- Skylark's expert generation fits natively (no prompt-channel
+  question).
+- Lower operational overhead for a single-developer pipeline.
+- Incremental: start with XState + Taskmaster + Skylark review, layer
+  in monitoring and context engineering as the pipeline matures.
+- ~460 lines of glue vs adopting a monolithic Go framework.
+
+**Keep Path A as the contingency** for two scenarios:
+- Taskmaster's task substrate proves insufficient under concurrent
+  workers (atomic writes, queryability at scale).
+- The pipeline scales to fleet operations where Restate + Beads would
+  be justified.
+
+**Keep Path C (hybrid) in reserve** for a specific scenario:
+- Beads (Gas Town's artifact substrate) could replace Taskmaster
+  without requiring the rest of Gas Town. This is the surgical
+  upgrade if Taskmaster's 4-MEETS on domain 03 can't be stretched to
+  cover the 11-MEETS Beads provides.
+
+---
 
 ## 11. Housekeeping
 
-- `docs/research/triad-source/` is a working mirror of the Triad plugin
-  used to work around subagent sandbox restrictions. Safe to delete
-  after synthesis; kept for now in case further evaluation is needed.
-- All 27 per-domain reports are in `docs/research/reviews/` under
-  `skylark/`, `gastown/`, `triad/` subdirectories and are the canonical
-  evidence base. Quote from them rather than re-deriving.
-- Criteria specs in `docs/research/criteria-review/` are the evaluation
-  rubric and should be treated as versioned — future evaluations
-  (e.g., of a fourth framework) should use the same criteria without
-  modification unless explicitly versioned.
+- Reports now span 6 directories under `reviews/`: `skylark/`,
+  `gastown/`, `triad/` (first pass), `xstate/`, `taskmaster/`,
+  `restate/`, `openllmetry/`, `langfuse/`, `context-mode/` (second
+  pass). 36 total reports.
+- The `composable-toolchain-report.md` in `docs/research/` is the
+  landscape scan that preceded the tool evaluations. Reference it for
+  tools considered but not evaluated (GitHub Spec Kit, session-kit,
+  Plane, agent-tasks, etc.).
+- Criteria specs in `docs/research/criteria-review/` remain the
+  evaluation rubric. All second-pass evaluations used the same criteria
+  without modification.
+- First-pass synthesis content is preserved in sections 3.x of this
+  document. The per-domain analysis remains valid evidence.
 
 ## 12. Summary for future-me
 
-Gas Town wins the infrastructure; Skylark owns the review discipline;
-Triad taught the decomposition cascade. The combination — Gas Town as
-runtime, Skylark as domain layer, Triad-derived discipline patterns
-layered on top — is the shape most likely to survive an ENG-180-class
-run.
+The composed stack works. XState provides the deterministic
+orchestrator Skylark never had. Taskmaster provides the task substrate
+with DAG decomposition, MCP interface, and atomic writes. Skylark
+keeps what nothing else can do: vocabulary-routed expert generation,
+bounded panel review, risk-proportional gating. context-mode handles
+context conservation and predecessor query. Langfuse + OpenLLMetry
+provide cost-aware observability. Five small glue components (~460
+lines) wire them together via file-based contracts.
 
-The single question blocking commitment is whether Gas Town's dispatch
-path can carry a full per-task expert prompt body. That question is a
-small hands-on trial away from being answered.
+Gas Town remains the contingency — strongest overall system (52 MEETS),
+but the coupling risk, prompt-channel question, and operational
+overhead make it the wrong default for a single-developer composable
+pipeline. If fleet scale arrives, the upgrade path is XState → Restate
+and Taskmaster → Beads, with the rest of the stack unchanged.
 
-Everything else is working in favor of the combined shape.
+The filesystem is the universal integration layer. Tools that store
+state as JSON/YAML/Markdown in git compose naturally. The Unix
+philosophy isn't just an aesthetic preference — it's the architecture
+that produces the most replaceable, debuggable, and resilient
+multi-agent systems.

@@ -164,7 +164,11 @@ export const storeReviewResult = assign(
     return {
       last_review_verdict: event.verdict,
       last_review_findings: event.findings,
-      review_round: context.review_round + 1,
+      // Only increment round counter for code quality verdicts.
+      // Spec compliance revisions loop without consuming a review round.
+      review_round: event.gate === 'code_quality'
+        ? context.review_round + 1
+        : context.review_round,
     };
   },
 );
@@ -268,6 +272,8 @@ export const markTaskSkipped = assign(
           status: 'skipped' as const,
         },
       },
+      // Clear verdict so onDone guards don't route to dispatch_worker
+      last_review_verdict: null,
       tasks_complete: context.tasks_complete + 1,
     };
   },
@@ -740,6 +746,24 @@ export function dispatchHaikuSizing({ context }: { context: OrchestratorContext 
     artifact_path: artifactPath,
     artifact_type: artifactType,
     sizing_result: context.last_sizing_result,
+  });
+}
+
+export function dispatchUpdateTaskStatus({
+  context,
+}: {
+  context: OrchestratorContext;
+  event: OrchestratorEvent;
+}): void {
+  if (context.current_task_id === null) return;
+
+  const task = context.tasks[context.current_task_id];
+  if (!task) return;
+
+  dispatch({
+    type: 'UPDATE_TASK_STATUS',
+    task_id: context.current_task_id,
+    status: task.status,
   });
 }
 

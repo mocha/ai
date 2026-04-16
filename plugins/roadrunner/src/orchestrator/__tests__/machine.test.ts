@@ -162,6 +162,7 @@ describe('Happy path: trivial risk (skip everything except develop)', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // route_verdict -> isShip -> exit_ship (final) -> onDone: not abort, not revise -> next_task
@@ -209,6 +210,7 @@ describe('Compound spec_review: SHIP at standard risk', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // route_verdict -> isShipNoApproval -> exit (final) -> onDone -> write_plan
@@ -237,6 +239,7 @@ describe('Compound spec_review: SHIP at critical risk needs approval', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // route_verdict -> isShipAndRequiresApproval -> awaiting_approval
@@ -296,6 +299,7 @@ describe('Compound spec_review: REVISE loop', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor)).toEqual({ spec_review: 'awaiting_review' });
@@ -309,6 +313,7 @@ describe('Compound spec_review: REVISE loop', () => {
       round: 2,
       report_path: '/tmp/report2.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor)).toEqual({ spec_review: 'escalate' });
@@ -340,6 +345,7 @@ describe('Compound spec_review: RETHINK escalation', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor)).toEqual({ spec_review: 'escalate' });
@@ -780,6 +786,7 @@ describe('Per-task review: REVISE routes back to dispatch_worker', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [{ severity: 'warning', description: 'Missing test', file: 'src/test.ts', line: 10 }],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // storeReviewResult: review_round -> 1, last_review_verdict -> 'REVISE'
@@ -812,6 +819,7 @@ describe('Per-task review: REVISE routes back to dispatch_worker', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // route_verdict: isShip -> exit_ship (final) with markTaskDone + dispatchQueryNextTask
@@ -843,6 +851,7 @@ describe('Per-task review: REVISE routes back to dispatch_worker', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor)).toEqual({ develop: { review_task: 'escalate' } });
@@ -857,19 +866,10 @@ describe('Per-task review: REVISE routes back to dispatch_worker', () => {
     // exit_skip (final) -> review_task.onDone: not abort, not revise (verdict still REVISE but it's
     // overridden... actually storeReviewResult not called on skip. lastVerdictIsRevise is true.
     // Wait: the escalation skip goes to exit_skip with markTaskSkipped + dispatchQueryNextTask.
-    // Then onDone checks: hasAbortReason (no), lastVerdictIsRevise (yes, it's still REVISE from before).
-    // So it goes to dispatch_worker? No, that doesn't make sense for skip.
-    // Let me re-read: exit_skip is final. onDone checks lastVerdictIsRevise which IS true.
-    // So it goes to dispatch_worker. Hmm, that seems like a bug, but let's test what actually happens.
-    // Actually wait: the markTaskSkipped action runs, and the task goes to 'skipped'.
-    // But lastVerdictIsRevise guard only checks context.last_review_verdict which is 'REVISE'.
-    // So onDone would route to dispatch_worker. Let me verify by checking the actual behavior.
-    // This is likely the actual behavior of the machine — the skip from escalation after REVISE
-    // will still see last_review_verdict='REVISE' and route to dispatch_worker.
-    // Let's just check what state we end up in.
+    // markTaskSkipped clears last_review_verdict to null, so onDone's
+    // lastVerdictIsRevise guard is false. Falls through to next_task.
     const finalState = stateOf(actor);
-    // Based on machine logic: exit_skip -> onDone -> lastVerdictIsRevise (true) -> dispatch_worker -> await_worker
-    expect(finalState).toEqual({ develop: 'await_worker' });
+    expect(finalState).toEqual({ develop: 'next_task' });
   });
 });
 
@@ -990,6 +990,7 @@ describe('Plan review compound state', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // route_verdict -> isShipNoApproval -> exit -> onDone -> develop
@@ -1016,6 +1017,7 @@ describe('Plan review compound state', () => {
       round: 1,
       report_path: '/tmp/report.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor)).toEqual({ plan_review: 'awaiting_approval' });
@@ -1209,5 +1211,108 @@ describe('configureFromRisk', () => {
     expect(ctx.review_panel_size).toBe(5);
     expect(ctx.decompose).toBe(true);
     expect(ctx.domain_clusters).toEqual(['security', 'auth']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 23. Gate-conditional round increment
+// ---------------------------------------------------------------------------
+describe('Gate-conditional round increment', () => {
+  // Use spec_review compound state for these tests because it loops within
+  // the same compound state without resetting review_round (unlike
+  // develop.review_task which resets via dispatch_worker entry).
+
+  it('code_quality gate increments review_round', () => {
+    const actor = actorFromSnapshot(
+      { spec_review: 'awaiting_review' },
+      {
+        risk: 'standard',
+        path: standardPath,
+        max_review_rounds: 2,
+        review_round: 0,
+      },
+    );
+
+    actor.send({
+      type: 'REVIEW_COMPLETE',
+      task_id: -1,
+      verdict: 'REVISE',
+      round: 1,
+      report_path: '/tmp/report.md',
+      findings: [{ severity: 'major', description: 'Quality issue', file: 'src/test.ts', line: 10 }],
+      gate: 'code_quality',
+    } as OrchestratorEvent);
+
+    // code_quality increments: 0 → 1. isReviseAndBelowMax (1 < 2) → loops.
+    expect(contextOf(actor).review_round).toBe(1);
+    expect(stateOf(actor)).toEqual({ spec_review: 'awaiting_review' });
+  });
+
+  it('spec_compliance gate does NOT increment review_round', () => {
+    const actor = actorFromSnapshot(
+      { spec_review: 'awaiting_review' },
+      {
+        risk: 'standard',
+        path: standardPath,
+        max_review_rounds: 2,
+        review_round: 0,
+      },
+    );
+
+    actor.send({
+      type: 'REVIEW_COMPLETE',
+      task_id: -1,
+      verdict: 'REVISE',
+      round: 1,
+      report_path: '/tmp/report.md',
+      findings: [{ severity: 'major', description: 'Missing requirement', file: 'src/api.ts', line: 5 }],
+      gate: 'spec_compliance',
+    } as OrchestratorEvent);
+
+    // spec_compliance does NOT increment: stays at 0. isReviseAndBelowMax (0 < 2) → loops.
+    expect(contextOf(actor).review_round).toBe(0);
+    expect(contextOf(actor).last_review_verdict).toBe('REVISE');
+    expect(stateOf(actor)).toEqual({ spec_review: 'awaiting_review' });
+  });
+
+  it('code_quality REVISE at max rounds escalates, spec_compliance does not', () => {
+    // Start at round 1 (one code_quality round already used)
+    const actor = actorFromSnapshot(
+      { spec_review: 'awaiting_review' },
+      {
+        risk: 'standard',
+        path: standardPath,
+        max_review_rounds: 2,
+        review_round: 1,
+      },
+    );
+
+    // spec_compliance REVISE: round stays at 1, belowMax (1 < 2) → loops
+    actor.send({
+      type: 'REVIEW_COMPLETE',
+      task_id: -1,
+      verdict: 'REVISE',
+      round: 1,
+      report_path: '/tmp/report.md',
+      findings: [{ severity: 'major', description: 'Missing req', file: 'src/api.ts', line: 5 }],
+      gate: 'spec_compliance',
+    } as OrchestratorEvent);
+
+    expect(contextOf(actor).review_round).toBe(1);
+    expect(stateOf(actor)).toEqual({ spec_review: 'awaiting_review' });
+
+    // code_quality REVISE: round goes to 2, NOT belowMax (2 >= 2) → escalate
+    actor.send({
+      type: 'REVIEW_COMPLETE',
+      task_id: -1,
+      verdict: 'REVISE',
+      round: 2,
+      report_path: '/tmp/report2.md',
+      findings: [{ severity: 'major', description: 'Quality issue', file: 'src/api.ts', line: 10 }],
+      gate: 'code_quality',
+    } as OrchestratorEvent);
+
+    expect(contextOf(actor).review_round).toBe(2);
+    expect(stateOf(actor)).toEqual({ spec_review: 'escalate' });
   });
 });

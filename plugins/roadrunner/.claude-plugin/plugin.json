@@ -1,0 +1,15 @@
+{
+  "name": "roadrunner",
+  "version": "0.1.0",
+  "description": "Roadrunner orchestrator — XState v5 deterministic pipeline engine for composed AI-assisted development workflows",
+  "author": {
+    "name": "Mocha"
+  },
+  "keywords": [
+    "orchestrator",
+    "xstate",
+    "pipeline",
+    "state-machine",
+    "deterministic"
+  ]
+}

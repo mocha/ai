@@ -194,6 +194,7 @@ describe('Integration: standard risk, two tasks, one REVISE cycle', () => {
       round: 1,
       report_path: 'docs/reports/R-001.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // storeReviewResult -> route_verdict -> isShip -> exit_ship
@@ -265,6 +266,7 @@ describe('Integration: standard risk, two tasks, one REVISE cycle', () => {
         file: 'src/api/search.ts',
         line: 42,
       }],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // storeReviewResult sets review_round = 0 + 1 = 1, last_review_verdict = 'REVISE'
@@ -300,6 +302,7 @@ describe('Integration: standard risk, two tasks, one REVISE cycle', () => {
       round: 2,
       report_path: 'docs/reports/R-002-r2.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     // markTaskDone + dispatchQueryNextTask -> next_task
@@ -458,6 +461,7 @@ describe('Integration: crash recovery mid-pipeline', () => {
       round: 1,
       report_path: 'docs/reports/R-001.md',
       findings: [],
+      gate: 'code_quality',
     } as OrchestratorEvent);
 
     expect(stateOf(actor2)).toEqual({ develop: 'next_task' });

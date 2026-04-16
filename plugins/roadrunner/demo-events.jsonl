@@ -1,0 +1,16 @@
+{"type":"START","input":{"type":"raw-idea","content":"add full-text search to the app","user_risk_override":null}}
+{"type":"TRIAGE_COMPLETE","input_type":"raw-idea","risk":"standard","path":["triage","prepare","develop","finish"],"existing_artifact":null,"external_ref":null,"decompose":true,"domain_clusters":["search","database"]}
+{"type":"PREPARE_COMPLETE","spec_path":"docs/specs/SPEC-001.md","decomposition_recommended":false,"decomposition_rationale":null}
+{"type":"DECOMPOSITION_COMPLETE","task_count":2,"task_ids":[1,2],"domains":["search"]}
+{"type":"QUERY_RESULT","outcome":"task_ready","task":{"id":1,"title":"Add FTS5 virtual table","dependencies":[],"status":"pending","details":"Create the FTS5 virtual table and populate it","acceptanceCriteria":["FTS5 table exists","search returns results"],"relevantFiles":["src/db/search.ts"]}}
+{"type":"EXPERT_READY","task_id":1,"expert_prompt_path":".roadrunner/experts/TASK-001.md","drift_check":"pass","drift_details":null}
+{"type":"WORKER_COMPLETE","task_id":1,"status":"DONE","result_path":".roadrunner/results/TASK-001.json","cost_usd":0.12,"duration_ms":45000,"files_changed":["src/db/search.ts"],"concerns":null}
+{"type":"REVIEW_COMPLETE","task_id":1,"verdict":"SHIP","round":1,"report_path":"docs/reports/R-001.md","findings":[]}
+{"type":"QUERY_RESULT","outcome":"task_ready","task":{"id":2,"title":"Add search API endpoint","dependencies":[1],"status":"pending","details":"REST endpoint for search queries","acceptanceCriteria":["GET /api/search returns results"],"relevantFiles":["src/api/search.ts"]}}
+{"type":"EXPERT_READY","task_id":2,"expert_prompt_path":".roadrunner/experts/TASK-002.md","drift_check":"pass","drift_details":null}
+{"type":"WORKER_COMPLETE","task_id":2,"status":"DONE","result_path":".roadrunner/results/TASK-002.json","cost_usd":0.15,"duration_ms":60000,"files_changed":["src/api/search.ts"],"concerns":null}
+{"type":"REVIEW_COMPLETE","task_id":2,"verdict":"REVISE","round":1,"report_path":"docs/reports/R-002.md","findings":[{"severity":"blocking","description":"Missing error handling for empty queries","file":"src/api/search.ts","line":42}]}
+{"type":"WORKER_COMPLETE","task_id":2,"status":"DONE","result_path":".roadrunner/results/TASK-002-r2.json","cost_usd":0.08,"duration_ms":30000,"files_changed":["src/api/search.ts"],"concerns":null}
+{"type":"REVIEW_COMPLETE","task_id":2,"verdict":"SHIP","round":2,"report_path":"docs/reports/R-002-r2.md","findings":[]}
+{"type":"QUERY_RESULT","outcome":"all_complete"}
+{"type":"FINISH_COMPLETE","summary":"Pipeline complete: 2 tasks, $0.35 total"}
