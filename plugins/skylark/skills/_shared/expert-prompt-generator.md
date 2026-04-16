@@ -6,7 +6,7 @@ Internal methodology for creating vocabulary-routed expert prompts. Read this be
 
 LLMs organize knowledge in clusters within embedding space. Precise domain terms activate specific deep clusters. Generic language activates broad shallow clusters. A prompt containing "FTS5 virtual table, bm25() ranking, column weight boosting" activates fundamentally different knowledge than "full-text search optimization."
 
-## 5-Step Process
+## 6-Step Process
 
 ### Step 1: Analyze Subject Matter
 
@@ -17,7 +17,24 @@ Before writing anything, identify:
 - **Edge cases:** What's likely to go wrong or be overlooked?
 - **Goals:** What does success look like for this expert's work?
 
-### Step 2: Draft Role Identity
+### Step 2: Check Roster
+
+Before generating from scratch, check `expert-roster.json` for a matching role:
+
+1. Identify what expert perspective is needed from the Step 1 analysis
+2. Search the roster by tags for the best match:
+   - **First:** check for a tech-specific variant (e.g., `database-engineer-postgres`) — these are project-added specializations
+   - **Then:** check for a `general-` variant (e.g., `general-database-engineer`)
+3. **If match found — load and adapt:**
+   - Use the roster entry's identity, vocabulary, and anti-patterns as a starting point
+   - **Specialize the vocabulary** to the project context: add project-specific terms, upgrade generic terms to match the actual tech stack (e.g., `general-database-engineer` vocabulary gets Postgres-specific terms added when reviewing a Postgres project)
+   - **Add project-specific anti-patterns** if the subject matter reveals domain risks not in the roster entry
+   - Proceed to Step 5 (Assemble Prompt) — skip Steps 3-4 since the roster provides the base material
+4. **If no match found:** proceed to Step 3 (Draft Role Identity) and generate from scratch
+
+The roster is a starting point, not a ceiling. Always adapt to the specific project context.
+
+### Step 3: Draft Role Identity
 
 Write a brief identity statement (<50 tokens) that:
 - Uses a **real-world job title** that exists in real organizations
@@ -37,14 +54,15 @@ Write a brief identity statement (<50 tokens) that:
 - "You are an expert world-class full-stack developer..." (superlative + combined role)
 - "You are the best engineer on the team..." (flattery)
 
-### Step 3: Extract Vocabulary
+### Step 4: Extract Vocabulary
 
 Follow the process in `vocabulary-guide.md`:
 - 3-5 clusters, 15-30 terms total
 - Practitioner-tested, attributed where known
 - Each cluster should mirror expert discourse patterns (not document sections)
+- See `expert-exemplars.md` for complete examples of finished vocabulary payloads across different domains
 
-### Step 4: Derive Anti-Patterns
+### Step 5: Derive Anti-Patterns
 
 Identify 5-10 failure modes specific to the domain and task:
 - Each vocabulary cluster needs at least 1 failure mode
@@ -53,7 +71,9 @@ Identify 5-10 failure modes specific to the domain and task:
 
 **Prioritize domain-specific risks** over generic advice. "Unbounded N+1 in Drizzle relation queries" beats "optimize database queries."
 
-### Step 5: Assemble Prompt
+### Step 6: Assemble Prompt
+
+This is the entry point for both roster-adapted experts (from Step 2) and freshly generated experts (from Steps 3-5).
 
 Use the structure from `prompt-template.md`. Order matters (progressive disclosure):
 
