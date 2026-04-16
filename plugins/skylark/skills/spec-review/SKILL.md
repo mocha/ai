@@ -62,12 +62,13 @@ Wait for the synthesized verdict.
 - Propose specific fixes for each issue
 - Get user approval on proposed fixes
 - Apply fixes to the spec
+- **Post-revision scope check:** If revisions revealed that the spec spans 3+ bounded contexts or multiple independent subsystems, decompose into sub-specs before proceeding to Round 2. Each sub-spec gets its own file and pipeline cycle.
 - Update spec frontmatter: `updated: [today]`
 - Append changelog entry:
   ```
   - **YYYY-MM-DD HH:MM** — [SPEC-REVIEW] Round 1: revise. Revised per findings.
   ```
-- Proceed to Round 2.
+- Proceed to Round 2 (or return decomposed sub-specs to implement for independent review).
 
 **Rethink** → Stop.
 - Present fundamental concerns to user

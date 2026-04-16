@@ -13,9 +13,15 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Save plans to:** `docs/plans/PLAN-NNN-<slug>.md`
 
-## Scope Check
+## Scope and Size Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+
+**Plan decomposition:** Plans have no hard token cap — they decompose by scope (8+ tasks or dense cross-dependencies → split into sub-plans). A plan is large because it contains many tasks; the right response is to decompose tasks, not to shrink the plan.
+
+**Task size limit:** Each individual task spec should target **~2,000 tokens** — small, focused, self-contained. The total dispatch payload (task spec + parent context + expert prompt) must fit within **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`. The implementer needs 80% of the context window for reading code, writing code, running tests, and self-review.
+
+**Architecture docs:** If the plan makes significant architectural decisions (technology choices, data model design, integration patterns), document them as ADRs in `docs/architecture/` — same format as brainstorm produces. Plans should reference architectural decisions, not embed lengthy justifications.
 
 ## File Structure
 
@@ -119,7 +125,7 @@ Expected: PASS
 
 ```bash
 git add tests/path/test.ts src/path/file.ts
-git commit -m "feat(TASK-NNN): add specific feature"
+git commit -m "feat(bd-XXXX): add specific feature"
 ```
 ````
 
@@ -157,6 +163,8 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **5. File paths:** Every path is exact and absolute from repo root. No "somewhere in src/".
 
 **6. Verification steps:** Every task has at least one "Run: ... Expected: ..." step.
+
+**7. Task sizes:** Each task spec should be ~2,000 tokens. For each task, estimate the combined dispatch payload (spec + parent context + expert prompt). If any task would exceed 40,000 tokens per `_shared/risk-matrix.md`, break it into smaller tasks. A task that needs that much context is trying to do too much.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on.
 

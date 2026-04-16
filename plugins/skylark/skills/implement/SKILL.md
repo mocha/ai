@@ -44,6 +44,8 @@ If `decompose` is true, handle decomposition before proceeding:
 - For plans: split into sub-plans, each enters at plan-review independently
 - Create dependency relations between child artifacts
 
+Decomposition can be triggered by scope analysis (3+ bounded contexts for specs, 8+ tasks or dense cross-deps for plans) or by **task size guardrails** (dispatch payload over 40,000 tokens). See `_shared/risk-matrix.md` for thresholds. Any stage may return a decomposition recommendation when tasks exceed these limits.
+
 ### Step 2: Walk the Pipeline
 
 Execute each stage in the path returned by triage, in order. Skip stages not in the path.
@@ -80,7 +82,8 @@ Read and invoke `write-plan/SKILL.md`.
 #### PLAN-REVIEW (elevated+ risk)
 Read and invoke `plan-review/SKILL.md`.
 - Receives: plan path, risk level
-- Returns: task list with statuses, recommended execution order, blocked tasks
+- Returns: task bead IDs with statuses, blocked tasks
+- Tasks are managed via beads (`bd`) — use `bd ready --json` to find unblocked, approved tasks
 - If tasks are blocked: skip them and their dependents, proceed with approved tasks
 
 #### DEVELOP (always — the core execution stage)
@@ -122,7 +125,8 @@ If the dispatch skill returns `status: fallback` (Mux server unreachable),
 inform the user and proceed with sequential execution below.
 
 **If user chooses sequential (or `.muxrc` absent):**
-- Read and invoke `develop/SKILL.md` for each task in dependency order
+- Use `bd ready --json` to get the next unblocked task
+- Read and invoke `develop/SKILL.md` for each task (develop claims via `bd update --claim`)
 - One worktree per task, merged as each completes
 - Fresh vocabulary-routed expert per task
 - Panel review per task (model and rounds per risk matrix)
@@ -131,16 +135,17 @@ inform the user and proceed with sequential execution below.
   git merge <task-branch>
   pnpm test  # full suite, not just task's tests
   ```
+- After each merge, `bd ready --json` again — completing a task may unblock dependents
 
 **Progress reporting after each task:**
 ```
 ## Progress: [N/total] tasks complete
 
-completed  TASK-001: [title] — complete
-completed  TASK-002: [title] — complete
-active     TASK-003: [title] — in progress
-pending    TASK-004: [title] — pending (depends on TASK-003)
-skipped    TASK-005: [title] — blocked (rethink verdict)
+completed  bd-a1b2: [title] — closed
+completed  bd-c3d4: [title] — closed
+active     bd-e5f6: [title] — in progress
+pending    bd-g7h8: [title] — blocked (depends on bd-e5f6)
+skipped    bd-i9j0: [title] — blocked (rethink verdict)
 ```
 
 **If a task fails (blocked after max review rounds):**

@@ -60,6 +60,9 @@ Use the structure from `prompt-template.md`. Order matters (progressive disclosu
 1. **Identity** (primacy effect — highest attention weight)
 2. **Vocabulary** (routes knowledge activation before task details arrive)
 3. **Anti-patterns** (steers away from failure modes before generation begins)
-4. **Context-specific sections** (added by calling skill — review focus, operational guidance, etc.)
+4. **Resources** (docs/ access and solo-review availability — always present)
+5. **Context-specific sections** (added by calling skill — review focus, operational guidance, etc.)
 
-The calling skill adds context-specific sections after the core three. See `prompt-template.md` for the full structure.
+The calling skill adds context-specific sections after the Resources block. See `prompt-template.md` for the full structure.
+
+**Resources block (always include):** Every generated expert prompt must include the Resources section from `prompt-template.md`. This gives the expert access to `docs/` (strategy notes, architecture decisions, prior art) and the ability to invoke `/skylark:solo-review` for a second opinion. Experts should never feel stuck — they can always read more context or ask for help.

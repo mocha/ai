@@ -17,19 +17,34 @@ Execute a single task with a fresh vocabulary-routed expert developer in an isol
 
 ## When Called
 
-Called by `/skylark:implement` for each approved task in dependency order. Receives the task spec path and risk level.
+Called by `/skylark:implement` for each approved task in dependency order. Receives the task's bead ID and risk level.
 
 ## Process
 
-### Step 1: Read the Task Spec
+### Step 1: Read the Task
 
-Read the task spec fully. Also read:
+Retrieve the task from beads and read all supporting context:
+
+```bash
+# Get the full task content
+bd show <task-id> --json
+```
+
+The JSON response contains `description`, `design`, `acceptance_criteria`, and `spec_id` (path to parent plan). Also read:
+- The parent plan (from `spec_id`) for broader context
+- The parent spec (from the plan's `parent` frontmatter) for design intent
 - Referenced files (existing code, architecture specs)
-- Parent plan (for broader context)
-- Parent spec (for design intent)
 - Project CLAUDE.md (for conventions and stack)
 
-**Extract the full task text now.** The subagent receives the full text inline — do NOT make the subagent read the plan or task file. You curate exactly what context is needed.
+**Claim the task atomically before proceeding:**
+
+```bash
+bd update <task-id> --claim --json
+```
+
+This sets status to `in_progress` and assigns the task. If the claim fails (already claimed), another agent is working on it — skip and move to the next ready task.
+
+**Extract the full task text now.** The subagent receives the full text inline — do NOT make the subagent query beads or read the plan file. You curate exactly what context is needed.
 
 ### Step 2: Generate Expert Developer Prompt
 
@@ -64,6 +79,10 @@ A database migration task gets different routing than a CLI formatting task in t
 - Validate: every package in anti-patterns appears in deliverables
 - Validate: no contradictions between anti-patterns and deliverables
 
+### Step 2b: Pre-Flight Size Check
+
+Before creating a worktree, estimate the total context the implementer will receive: task spec + parent context + expert prompt. If this exceeds **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`, the task is too large. Return to implement with a recommendation to decompose the task further. Do not dispatch an implementer into a task that will exhaust its context window before it can read and write code.
+
 ### Step 3: Create Worktree
 
 Create an isolated worktree for this task:
@@ -72,9 +91,9 @@ Create an isolated worktree for this task:
 git worktree add <worktree-path> -b <task-branch-name>
 ```
 
-Branch naming: `task/<task-id>-<slug>` (e.g., `task/TASK-012-schema-migration`)
+Branch naming: `task/<bead-id>-<slug>` (e.g., `task/bd-a1b2-schema-migration`)
 
-If the task has an `external_ref`, include it: `task/TASK-012-eng-142-schema-migration`
+If the task has an `external_ref`, include it: `task/bd-a1b2-eng-142-schema-migration`
 
 ### Step 4: Select Model
 
@@ -130,6 +149,13 @@ Once you're clear on requirements:
 questions.** It's always OK to pause and clarify. Don't guess or make
 assumptions.
 
+**If you discover new work** (bugs, missing tests, tech debt) while
+implementing, create a bead to track it:
+```bash
+bd create "Found: <description>" -t bug -p 2 --description="<details>" --deps discovered-from:<current-task-id> --json
+```
+This links the discovered work to the current task without derailing you.
+
 ## Code Organization
 
 - Follow the file structure defined in the plan
@@ -139,6 +165,16 @@ assumptions.
 - In existing codebases, follow established patterns. Improve code you're
   touching the way a good developer would, but don't restructure things
   outside your task.
+
+## Resources
+
+- **Project docs:** Explore `docs/` for additional context — specs, plans,
+  strategy notes (`docs/strategy/`), architecture decisions (`docs/architecture/`),
+  and prior art. Read anything that looks relevant to your task.
+- **Expert consultation:** If you need a second opinion on a design question,
+  domain concern, or tricky trade-off, invoke `/skylark:solo-review` to get
+  a vocabulary-routed expert review on any document or question. You are
+  always welcome to stop and ask an expert rather than guessing.
 
 ## When You're in Over Your Head
 
@@ -151,6 +187,11 @@ than no work. You will not be penalized for escalating.
 - You feel uncertain about whether your approach is correct
 - The task involves restructuring existing code in ways the plan didn't anticipate
 - You've been reading file after file trying to understand without progress
+
+**Before escalating, consider:**
+- Check `docs/architecture/` for prior decisions that might resolve your question
+- Check `docs/strategy/` for design principles that clarify intent
+- Invoke `/skylark:solo-review` to get an expert opinion on your specific concern
 
 **How to escalate:** Report back with status BLOCKED or NEEDS_CONTEXT. Describe
 specifically what you're stuck on, what you've tried, and what kind of help
@@ -294,10 +335,10 @@ In addition to standard code quality concerns, the panel should check:
 ### Step 9: Handle Review Verdict
 
 **Ship** → Task complete.
-- Update task frontmatter: `status: complete`
-- Append changelog entry to the task:
+- Close the bead: `bd close <task-id> --reason "Implemented. Tests pass. Branch: task/<bead-id>-slug." --json`
+- Append changelog entry to the parent plan:
   ```
-  - **YYYY-MM-DD HH:MM** — [DEVELOP] Task complete. Tests pass. Branch: task/TASK-NNN-slug.
+  - **YYYY-MM-DD HH:MM** — [DEVELOP] Task <bead-id> complete. Tests pass. Branch: task/<bead-id>-slug.
   ```
 - Return to implement for merge and next task.
 
@@ -310,10 +351,7 @@ In addition to standard code quality concerns, the panel should check:
 
 **Revise (round 2) or Rethink** → Escalate.
 - Present unresolved findings to user
-- Append changelog entry to the task:
-  ```
-  - **YYYY-MM-DD HH:MM** — [DEVELOP] Escalated after review round 2. N issues remain.
-  ```
+- Mark the task blocked: `bd update <task-id> --status blocked --json`
 - Return to implement with `escalate` status
 
 ### Step 10: Return to Implement
@@ -321,8 +359,7 @@ In addition to standard code quality concerns, the panel should check:
 Return:
 ```
 status: complete | escalate | blocked
-task_id: TASK-NNN
-task_path: docs/tasks/...-task-NN.md
+task_id: <bead-id>
 worktree_path: <path>
 branch: <branch-name>
 changes: [summary of files created/modified]

@@ -16,7 +16,9 @@ Called by `/skylark:implement` as the first pipeline stage. Receives the user's 
 ### Step 1: Search for Prior Art
 
 Before classifying anything, search local artifacts for existing work:
-- Grep `docs/specs/`, `docs/plans/`, `docs/tasks/` for matching keywords from the input
+- Grep `docs/specs/`, `docs/plans/` for matching keywords from the input
+- Grep `docs/strategy/` and `docs/architecture/` for relevant design principles and prior architectural decisions
+- Search beads for related tasks: `bd search "<keywords>" --json` or `bd list --json`
 - Also check `docs/superpowers/specs/` and `docs/superpowers/plans/` for legacy artifacts
 - Search `git log` for related commit messages
 - If related work exists, surface it to the user: "Found SPEC-003 which looks related. Should we continue with that, or is this separate?"
@@ -27,7 +29,7 @@ Before classifying anything, search local artifacts for existing work:
 |-------|------|-----------|
 | File path to `docs/specs/*.md` | `spec` | Path contains `/specs/` and has spec frontmatter |
 | File path to `docs/plans/*.md` | `plan` | Path contains `/plans/` and has plan frontmatter |
-| File path to `docs/tasks/*.md` | `task` | Path contains `/tasks/` and has task frontmatter |
+| Bead ID (e.g., `bd-a1b2`) | `task` | Matches `bd-` prefix; verify via `bd show <id> --json` |
 | File path to any other file | `raw-input` | Read it, evaluate content maturity (see below) |
 | External tracker reference (e.g., `#42`, `ENG-142`) | `external-ref` | Matches common tracker patterns |
 | Bug report, error message, failing test | `raw-problem` | Describes a malfunction |
@@ -55,13 +57,13 @@ State is determined from **artifacts**, not from memory or conversation history.
 - `draft` — file exists, no panel reports reference it
 - `reviewed` — panel reports exist for the plan
 - `approved` — all panel reports show `verdict: ship`
-- `decomposed` — task spec files exist in `docs/tasks/` with `parent` pointing to this plan
+- `decomposed` — beads exist with `spec_id` pointing to this plan (`bd list --json` and filter)
 
-**For tasks:**
-- `pending` — file exists, `status: pending` or no worktree
-- `in-progress` — worktree exists for this task
-- `complete` — `status: complete` in frontmatter
-- `blocked` — `status: blocked` or panel report with `verdict: rethink`
+**For tasks (managed via beads):**
+- `pending` — `bd show <id> --json` shows `status: open`
+- `in-progress` — `bd show <id> --json` shows `status: in_progress`
+- `complete` — `bd show <id> --json` shows `status: closed`
+- `blocked` — `bd show <id> --json` shows `status: blocked`
 
 **For external references:**
 - Check if any existing artifact has `external_ref` matching the reference

@@ -29,6 +29,15 @@ You are a [real job title] [primary responsibility]. [Authority boundary].
 [5-10 anti-patterns, all three columns filled]
 ```
 
+## Resources Section (Always Present After Anti-Patterns)
+
+```markdown
+## Resources
+
+- **Project docs:** Explore `docs/` for specs, plans, strategy notes, architecture decisions, and prior art. Read anything that looks relevant to your task — `docs/strategy/` has design principles and user stories, `docs/architecture/` has architectural decision records.
+- **Expert consultation:** If you need a second opinion on a design question, domain concern, or tricky trade-off, invoke `/skylark:solo-review` to get a vocabulary-routed expert review on any document or question. You are always welcome to stop and ask an expert.
+```
+
 ## Context-Specific Sections (Added by Calling Skill)
 
 ### For Review Context (panel-review, solo-review, spec-review, plan-review)
@@ -79,7 +88,8 @@ Ship | Revise | Rethink — one sentence justification.
 1. **Identity first** — primacy effect gives highest attention weight, primes the role
 2. **Vocabulary second** — routes knowledge activation before task details arrive
 3. **Anti-patterns third** — steers away from failure modes before generation begins
-4. **Context sections last** — task-specific detail benefits from recency effect
+4. **Resources fourth** — makes docs/ and solo-review available before task details
+5. **Context sections last** — task-specific detail benefits from recency effect
 
 ## Rules
 

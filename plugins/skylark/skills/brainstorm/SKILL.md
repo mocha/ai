@@ -22,14 +22,15 @@ Every project goes through this process. A todo list, a single-function utility,
 You MUST create a task for each of these items and complete them in order:
 
 1. **Explore project context** — check files, docs, recent commits, search existing artifacts for prior art
-2. **Assess scope** — is this too large for a single spec? If it spans multiple independent subsystems, decompose before asking detailed questions.
+2. **Assess scope** — is this too large for a single spec? If it spans multiple independent subsystems or 3+ bounded contexts, decompose before asking detailed questions.
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to complexity, get user approval after each section
-6. **Write design doc** — save to `docs/specs/SPEC-NNN-<slug>.md` with frontmatter per `_shared/artifact-conventions.md`, commit to git
-7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Hand off** — return to `/skylark:implement` pipeline (next stage: spec-review) or suggest the user invoke it
+6. **Capture strategy and architecture** — document design principles, jobs to be done, and user stories in `docs/strategy/`. Document major architectural decisions in `docs/architecture/`. These are separate from the spec — they persist as reference material for future work. (See below.)
+7. **Write design doc** — save to `docs/specs/SPEC-NNN-<slug>.md` with frontmatter per `_shared/artifact-conventions.md`, commit to git
+8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, **and size** (see below)
+9. **User reviews written spec** — ask user to review the spec file before proceeding
+10. **Hand off** — return to `/skylark:implement` pipeline (next stage: spec-review) or suggest the user invoke it
 
 ## Process Flow
 
@@ -72,7 +73,7 @@ digraph brainstorming {
 **Understanding the idea:**
 
 - Check out the current project state first (files, docs, recent commits)
-- Search `docs/specs/`, `docs/plans/`, `docs/tasks/` for existing work in this area — don't create duplicate work
+- Search `docs/specs/`, `docs/plans/` for existing work in this area — also check beads (`bd search "<keywords>" --json`) for related tasks — don't create duplicate work
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
@@ -109,6 +110,17 @@ digraph brainstorming {
 
 ## After the Design
 
+**Strategy and Architecture Docs:**
+
+During design, separate the *reasoning behind the design* from the *spec itself*. The spec describes what to build; these documents capture why.
+
+- **`docs/strategy/`** — Design principles, jobs to be done (JTBD), user stories, success metrics, and constraints that shaped the design. Write a file per concern (e.g., `docs/strategy/multi-tenancy-principles.md`). These inform future specs in the same domain.
+- **`docs/architecture/`** — Architectural decision records (ADRs) for significant technical choices made during design. Use a simple format: Context, Decision, Consequences. Write a file per decision (e.g., `docs/architecture/adr-postgres-first-tenant-model.md`). These inform future plans and prevent re-litigating settled decisions.
+
+Not every spec needs these. Write them when the design discussion surfaces principles, trade-offs, or decisions that would be valuable to future work — especially when multiple approaches were considered and one was chosen for non-obvious reasons.
+
+Commit these alongside the spec.
+
 **Documentation:**
 
 - Allocate the next `SPEC-NNN` ID per `_shared/artifact-conventions.md`
@@ -138,6 +150,7 @@ After writing the spec document, look at it with fresh eyes:
 2. **Internal consistency:** Do any sections contradict each other? Does the data model support the API surface described? Does the architecture match the feature descriptions?
 3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
+5. **Decomposition check:** Does this spec span 3+ bounded contexts or describe multiple independent subsystems? If so, decompose into sub-spec documents — each sub-spec gets its own file, frontmatter, and pipeline cycle. Link sub-specs to a parent spec via `parent` frontmatter. The parent spec becomes a thin overview pointing to its children. (Specs have no hard token cap — they decompose by scope, not size. See `_shared/risk-matrix.md`.)
 
 Fix any issues inline. No need to re-review — just fix and move on.
 

@@ -84,7 +84,11 @@ For each issue:
 **f. Include this directive in every expert prompt:**
 "You must identify at least one substantive issue or explicitly justify
 clearance with specific evidence. An empty Issues section is not acceptable
-unless accompanied by a detailed justification in the Verdict."
+unless accompanied by a detailed justification in the Verdict.
+
+Resources available to you: explore `docs/` for additional context —
+`docs/strategy/` has design principles and user stories, `docs/architecture/`
+has architectural decision records. Read anything relevant to your review."
 
 ### 3. Dispatch the expert
 

@@ -47,6 +47,27 @@ At every review gate in the critical path:
 - **Round 2:** Narrow to 2-3 experts who had the strongest findings and strongest opinions from round 1
 - Rationale: don't pay for 5 experts to confirm nits are fixed
 
+## Size Guardrails
+
+Hard limits on what gets dispatched to workers. These exist to prevent tasks that exhaust a Sonnet context window and leave no room for the actual implementation work.
+
+**The constraint is at the task level, not the spec/plan level.** Specs and plans are consumed by reviewers and planners who can handle larger documents. Tasks are the unit that hits the hard limit — they get dispatched to Sonnet workers with finite context.
+
+| Artifact | Guardrail | Rationale |
+|----------|-----------|-----------|
+| Individual task spec | ~2 000 tokens | Small, focused, self-contained — one clear job for the worker |
+| Total dispatch payload (task + parent context + expert prompt) | ≤ 40 000 tokens (20 % of Sonnet's 200k context) | Leaves 80 % of context for the worker to read code, write code, run tests, and self-review |
+| Spec document | No token cap — decompose by **scope** (3+ bounded contexts) | Dense in abstractions; size comes from complexity, not sprawl |
+| Plan document | No token cap — decompose by **scope** (8+ tasks or dense cross-deps) | Plans are large because they contain many tasks; decompose the tasks, not the plan |
+
+**When to check task size:**
+- When writing the plan (write-plan self-review)
+- When extracting task specs (plan-review)
+- After revising task specs post-review (plan-review)
+- Before dispatching a task to an implementer (develop, dispatch-with-mux)
+
+**Token estimation:** ~4 characters per token. A 2 000-token task spec is roughly 8 000 characters / ~1 200 words of technical prose. Err on the side of splitting tasks smaller.
+
 ## Scope Escalation
 
 When mid-implementation discovery reveals higher complexity:

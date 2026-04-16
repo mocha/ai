@@ -66,14 +66,18 @@ reason: "Mux server at $host:$port is not reachable. Falling back to sequential.
 
 ### Step 2: Build Dependency DAG
 
-Read all task artifacts from `docs/tasks/TASK-NNN-*.md`. For each:
-- Parse frontmatter: `id`, `status`, `depends_on`, `domain`
-- Only include tasks with `status: approved`
+Retrieve all tasks from beads:
 
-Build the dependency graph:
-1. Create adjacency list from `depends_on` fields
-2. Validate: no circular dependencies
-3. Validate: all referenced task IDs exist in the approved set
+```bash
+# Get all tasks linked to this plan
+bd list --json
+# Filter for tasks with spec_id pointing to the plan, status open or approved label
+```
+
+Build the dependency graph from beads' blocking dependencies:
+1. Use `bd dep tree <task-id> --json` to retrieve the full dependency structure
+2. Validate: no circular dependencies (`bd dep cycles`)
+3. Only include tasks with the `approved` label
 4. If blocked tasks exist (from plan-review), exclude them and their dependents
 
 ### Step 3: Compute Execution Waves
@@ -108,9 +112,11 @@ Mux server: localhost:3000, max_parallel_tasks: 4
 
 For each wave, in order:
 
-#### 4a. Generate Expert Prompts
+#### 4a. Pre-Flight Size Check and Expert Prompts
 
-For each task in the wave, follow `_shared/expert-prompt-generator.md` to
+For each task in the wave, estimate the total context: task spec + parent context + expert prompt. If any task exceeds **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`, do not dispatch it — return it to implement with a recommendation to decompose further.
+
+For tasks that pass the size check, follow `_shared/expert-prompt-generator.md` to
 generate a vocabulary-routed expert prompt scoped to that task's domain.
 
 This is the same process as `develop/SKILL.md` Step 2. Each task gets a
@@ -150,7 +156,7 @@ Agent definition format:
 
 ```markdown
 ---
-name: "TASK-NNN Expert"
+name: "<bead-id> Expert"
 base: exec
 subagent:
   runnable: true
@@ -166,6 +172,11 @@ prompt:
 
 ## Anti-Patterns
 [Generated anti-patterns — 5-10 failure modes with detection + resolution]
+
+## Resources
+
+- **Project docs:** Explore `docs/` for additional context — `docs/strategy/` has design principles and user stories, `docs/architecture/` has architectural decision records. Read anything relevant to your task.
+- **Expert consultation:** If you need a second opinion on a design question, domain concern, or tricky trade-off, invoke `/skylark:solo-review` to get a vocabulary-routed expert review on any document or question. You are always welcome to stop and ask an expert.
 
 ## Operational Guidance
 [Task-specific: error philosophy, concurrency model, edge case handling]
@@ -296,9 +307,9 @@ Review target: implementation diff in the worktree.
 
 #### 5c. Handle Verdicts
 
-**Ship:** Update task artifact: `status: complete`. Append changelog:
+**Ship:** Close the task bead: `bd close <task-id> --reason "Implemented via Mux. Tests pass. Branch: task/<bead-id>-slug." --json`. Append changelog to parent plan:
 ```
-- **YYYY-MM-DD HH:MM** — [DEVELOP] Task complete via Mux dispatch. Tests pass. Branch: task/TASK-NNN-slug.
+- **YYYY-MM-DD HH:MM** — [DEVELOP] Task <bead-id> complete via Mux dispatch. Tests pass. Branch: task/<bead-id>-slug.
 ```
 
 **Revise (round < max):** Send implementer back into the Mux workspace with
@@ -315,7 +326,7 @@ After all tasks in a wave pass review (or are skipped/escalated):
    are independent), merge one at a time to maintain a clean HEAD:
 
    ```bash
-   git merge task/TASK-NNN-slug --no-ff
+   git merge task/<bead-id>-slug --no-ff
    ```
 
 2. **After each merge, run the full test suite.** Not just the task's tests —
@@ -368,9 +379,9 @@ Return the aggregated result:
 
 ```
 status: complete | partial | blocked
-tasks_completed: [list of TASK-NNN IDs]
-tasks_skipped: [list of TASK-NNN IDs with reasons]
-tasks_blocked: [list of TASK-NNN IDs with blockers]
+tasks_completed: [list of bead IDs]
+tasks_skipped: [list of bead IDs with reasons]
+tasks_blocked: [list of bead IDs with blockers]
 waves_executed: N
 total_review_rounds: N
 outstanding_issues: [list, empty if all complete]
