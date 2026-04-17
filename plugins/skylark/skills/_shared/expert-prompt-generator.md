@@ -78,11 +78,25 @@ This is the entry point for both roster-adapted experts (from Step 2) and freshl
 Use the structure from `prompt-template.md`. Order matters (progressive disclosure):
 
 1. **Identity** (primacy effect — highest attention weight)
-2. **Vocabulary** (routes knowledge activation before task details arrive)
-3. **Anti-patterns** (steers away from failure modes before generation begins)
-4. **Resources** (docs/ access and solo-review availability — always present)
-5. **Context-specific sections** (added by calling skill — review focus, operational guidance, etc.)
+2. **Communication Style** (plain/concise/actionable + autonomous fix rule — primes the role before knowledge activation)
+3. **Vocabulary** (routes knowledge activation before task details arrive)
+4. **Anti-patterns** (steers away from failure modes before generation begins)
+5. **Resources** (docs/ access and solo-review availability — always present)
+6. **Context-specific sections** (added by calling skill — review focus, operational guidance, etc.)
+7. **User Preferences** (conditional — appended last if `.claude/skylark-prompt-mods.md` exists)
 
 The calling skill adds context-specific sections after the Resources block. See `prompt-template.md` for the full structure.
 
+**Communication Style block (always include):** Inline the contents of `_shared/communication-style.md` verbatim between Identity and Vocabulary. This governs the expert's output format across every dispatch.
+
 **Resources block (always include):** Every generated expert prompt must include the Resources section from `prompt-template.md`. This gives the expert access to `docs/` (strategy notes, architecture decisions, prior art) and the ability to invoke `/skylark:solo-review` for a second opinion. Experts should never feel stuck — they can always read more context or ask for help.
+
+**User Preferences block (conditional):** At the end of assembly, check whether `.claude/skylark-prompt-mods.md` exists at the project root. If it does:
+
+1. Read its contents.
+2. Append a `## User Preferences` section with the file's contents verbatim.
+3. If the file exceeds ~2,000 tokens (~8,000 characters), note the size in the dispatch log — the mods multiply across every agent, so oversized mods are expensive.
+
+If the file is absent, skip this section entirely — do not leave a placeholder.
+
+User preferences layer on top of the communication-style defaults. They cannot override safety gates (critical-risk reviews, verification-before-completion, spec-compliance checks, escalation paths). If a mod conflicts with a safety gate, prefer the safety gate and note the conflict once.

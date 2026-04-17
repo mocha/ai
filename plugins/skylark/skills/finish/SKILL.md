@@ -9,6 +9,8 @@ Guide completion of development work by presenting clear options and handling th
 
 **Core principle:** Verify tests → Verify ACs → Present options → Execute choice → Update artifacts → Session notes → Architecture check → Clean up → Recommend next.
 
+**Communication Style:** Follows `_shared/communication-style.md`. Option presentations are tight — name each option, show what happens on pick, skip the analysis of why. Session notes focus on decisions and load-bearing context for the next session, not deliberation.
+
 **Announce at start:** "I'm using the finish skill to complete this work."
 
 ## When to Use

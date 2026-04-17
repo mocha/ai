@@ -19,7 +19,7 @@
     {
       "name": "skylark",
       "source": "./plugins/skylark",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "description": "Autonomous development pipeline — vocabulary-routed expert panels with risk-proportional gating, Linear integration, and artifact provenance. Single /skylark:implement entry point routes any input (issue, spec, bug report, idea) through triage, prepare, spec-review, write-plan, plan-review, develop, and finish.",
       "tags": ["agentic-workflow", "autonomous-workflow", "expert-review", "vocabulary-routing", "implementation-pipeline"]
     },

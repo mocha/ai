@@ -7,6 +7,22 @@ description: Use when starting any development work — file paths, specs, plans
 
 The single orchestrator for all development work. Classifies input, routes to the correct pipeline stage, and walks the pipeline to completion.
 
+## Communication Style
+
+All output through this pipeline follows `_shared/communication-style.md` — plain language, actionable content only, autonomous fixes for low-risk items. Every downstream skill inherits this default.
+
+## User Mods (load at pipeline start)
+
+**Before any stage runs,** check whether `.claude/skylark-prompt-mods.md` exists at the project root (relative to the working directory). If it does:
+
+1. Read the file once.
+2. Carry its contents through orchestration — pass to every stage skill you invoke as part of the context it receives.
+3. The expert-prompt-generator will automatically append it to every dispatched expert prompt (see `_shared/expert-prompt-generator.md` Step 6).
+
+If the file is absent, no-op — do not probe further, do not ask the user about it.
+
+User mods layer on top of skylark defaults for communication style and judgment. They **cannot** override safety gates (critical-risk reviews, verification-before-completion, spec-compliance checks, escalation paths).
+
 ## When to Use
 
 - User says "implement this", "build this", "work on this", "fix this bug"
@@ -184,12 +200,12 @@ This is why artifact discipline matters — every stage must leave a recoverable
 
 ## Quick Reference: Risk × Pipeline Path
 
-| Risk | Stages | Panel Model | Panel Size | User Confirms |
-|------|--------|-------------|-----------|---------------|
-| trivial | DEVELOP → FINISH | none | none | no |
-| standard | PREPARE → DEVELOP → FINISH | Sonnet | 2-3 | no |
-| elevated | PREPARE → SPEC-REVIEW → PLAN → PLAN-REVIEW → DEVELOP → FINISH | Opus (review), Sonnet (impl) | 3-4 | on escalation |
-| critical | PREPARE → SPEC-REVIEW → PLAN → PLAN-REVIEW → DEVELOP → FINISH | Opus (all) | 5→3 adaptive | every gate |
+| Risk | Stages | Panel Model | Panel Size | Rounds | User Confirms |
+|------|--------|-------------|-----------|--------|---------------|
+| trivial | DEVELOP → FINISH | none | none | — | no |
+| standard | PREPARE → DEVELOP → FINISH | Sonnet | 2 | 1 | no |
+| elevated | PREPARE → SPEC-REVIEW → PLAN → PLAN-REVIEW → DEVELOP → FINISH | Opus (review), Sonnet (impl) | 2 | 1 | on escalation |
+| critical | PREPARE → SPEC-REVIEW → PLAN → PLAN-REVIEW → DEVELOP → FINISH | Opus (all) | 5→3 adaptive | 2 | every gate |
 
 ## What This Skill Does NOT Do
 

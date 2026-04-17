@@ -19,6 +19,14 @@ reviews that catch domain-specific issues generic reviewers miss.
 Use when you need one deep perspective, not broad coverage. For multi-angle
 review, use `/skylark:panel-review` instead.
 
+## Communication Style
+
+Follows `_shared/communication-style.md`. Review output leads with blocking
+issues; minor nits are omitted when the reviewer would fix them themselves
+(per the autonomous-fix rule). The review directive is risk-tiered per
+`_shared/prompt-template.md` — default to the softer elevated directive
+unless the caller specifies critical material.
+
 ## Checklist
 
 Follow these steps in order. Do not skip steps.
@@ -64,31 +72,31 @@ that a reviewer should watch for in the document.
 
 **Output Format:**
 ```
-## Strengths
-[What the document gets right — specific, not generic praise]
-
 ## Issues
-For each issue:
+For each issue, ordered blocking → major → minor:
 - **Severity:** blocking | major | minor
 - **Location:** Where in the document
 - **Problem:** What's wrong
 - **Suggestion:** Concrete fix or alternative
 
 ## Missing
-[What the document should address but doesn't]
+[What the document should address but doesn't — only if substantive]
 
 ## Verdict
 [Ship / revise / rethink — one sentence justification]
 ```
 
-**f. Include this directive in every expert prompt:**
-"You must identify at least one substantive issue or explicitly justify
-clearance with specific evidence. An empty Issues section is not acceptable
-unless accompanied by a detailed justification in the Verdict.
+A Strengths section is optional — include it only if there are non-obvious design choices worth highlighting for the reader's next decision. Skip it otherwise; the reader needs actionable items, not praise.
+
+**f. Include a risk-tiered review directive per `_shared/prompt-template.md`.** Solo-review is typically invoked for focused review on a specific concern, which is analogous to elevated tier — use the softer directive by default:
+
+"Focus on blocking issues. Minor issues may be noted or omitted; if the document is sound, say so without forcing a finding. Nits you would fix yourself should be fixed (if you have that authority) or omitted.
 
 Resources available to you: explore `docs/` for additional context —
 `docs/strategy/` has design principles and user stories, `docs/architecture/`
 has architectural decision records. Read anything relevant to your review."
+
+If the caller explicitly invokes solo-review for critical-tier material (e.g., "review this before we ship load-bearing auth changes"), use the mandatory-finding directive from `_shared/prompt-template.md` instead.
 
 ### 3. Dispatch the expert
 

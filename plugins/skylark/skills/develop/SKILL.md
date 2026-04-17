@@ -9,6 +9,8 @@ Execute a single task with a fresh vocabulary-routed expert developer in an isol
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
+**Communication Style:** Follows `_shared/communication-style.md`. The implementer's dispatch prompt inlines the style rules, including the autonomous-fix rule — implementers fix small low-risk issues directly rather than surfacing them.
+
 **Core principles:**
 - Fresh vocabulary-routed expert per task (never reuse expert context across tasks)
 - Structured dispatch with question-asking and escalation built in
@@ -145,9 +147,19 @@ Once you're clear on requirements:
 5. Self-review (see below)
 6. Report back
 
+**Autonomous minor fixes:** When you encounter small, low-risk issues adjacent
+to your task — typos, obvious one-line bugs, missing null checks on obvious
+boundaries, wrong variable names, misaligned types, stale comments, dead
+imports — **fix them directly**. No permission required. Note the fix in one
+line in your report and move on.
+
+Not qualifying for autonomous fix: public API changes, architectural choices,
+anything that affects test semantics, anything touching auth/billing/schema.
+When in doubt, it doesn't qualify — escalate or ask.
+
 **While you work:** If you encounter something unexpected or unclear, **ask
 questions.** It's always OK to pause and clarify. Don't guess or make
-assumptions.
+assumptions about anything that's not a qualifying minor fix.
 
 **If you discover new work** (bugs, missing tests, tech debt) while
 implementing, create a bead to track it:
@@ -221,7 +233,7 @@ Review your work with fresh eyes:
 - Did I follow TDD?
 - Are tests comprehensive?
 
-If you find issues during self-review, fix them now before reporting.
+If you find issues during self-review, fix them now before reporting. This is also your chance to apply the autonomous-fix rule to any small issues you spotted but hadn't yet addressed.
 
 ## Report Format
 
@@ -321,9 +333,10 @@ Report:
 **Only after spec compliance passes.** Invoke `/skylark:panel-review` with:
 - Target: the implementation diff (changed files in worktree)
 - Panel size and model per `_shared/risk-matrix.md`:
-  - Standard: Sonnet, 2-3 experts, 1 round
-  - Elevated: Sonnet, 3-4 experts, 1 round
-  - Critical: Opus, 3-4 experts, 2 rounds
+  - Standard: Sonnet, 2 experts, 1 round
+  - Elevated: Sonnet, 2-3 experts, 1 round
+  - Critical: Opus, 3 experts, 2 rounds
+- Pass the risk tier so panel-review selects the correct review directive per `_shared/prompt-template.md`
 - Review focus: code quality, maintainability, test coverage, architecture fit
 
 In addition to standard code quality concerns, the panel should check:

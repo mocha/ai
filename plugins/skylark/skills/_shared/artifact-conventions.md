@@ -110,7 +110,7 @@ bd create "Found bug in auth validation" \
 
 ### Splitting Oversized Tasks
 
-If a task exceeds the size guardrail (~2,000 tokens per task spec, 40,000 tokens total dispatch payload per `risk-matrix.md`), split it using beads' parent-child relationships:
+If a task exceeds the size guardrail (~800-1,000 tokens per task spec, 40,000 tokens total dispatch payload per `risk-matrix.md`), split it using beads' parent-child relationships:
 
 ```bash
 # Create child tasks

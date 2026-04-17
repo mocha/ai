@@ -7,9 +7,11 @@ Risk levels and which pipeline gates are active at each level. Referenced by `/s
 | Signal | Risk Level |
 |--------|-----------|
 | Single file, clear fix, no architectural impact | **trivial** |
-| Few files, one bounded context, clear ACs | **standard** |
-| Multiple contexts, schema changes, auth/billing | **elevated** |
+| Few files, one bounded context, clear ACs, including single-context schema migrations and self-contained auth/billing tweaks | **standard** |
+| Cross-context changes (3+ bounded contexts), or auth/billing/schema changes that touch multiple consumers | **elevated** |
 | Architectural change, new integration, breaking change, load-bearing system | **critical** |
+
+Calibration note: `standard` is the default tier for most focused work. `elevated` is reserved for changes that genuinely cross boundaries — single-context schema migrations and isolated auth tweaks do **not** escalate on their own. This keeps expensive review gates off work that a competent implementer handles in-process.
 
 Risk can be:
 - **Declared** by the user ("this is load-bearing")
@@ -19,33 +21,37 @@ Risk can be:
 ## Gate Activation Matrix
 
 ```
-                      trivial    standard     elevated       critical
-                      ───────    ────────     ────────       ────────
-PREPARE                skip       yes          yes            yes
-BRAINSTORM             skip       skip         if no spec     if no spec
-SPEC-REVIEW            skip       skip         Opus 3-4       Opus 5→3 adaptive
-PLAN                   skip       skip         yes            yes
-PLAN-REVIEW            skip       skip         Opus 3-4       Opus 5→3 adaptive
-DEVELOP worktree       no         yes          yes            yes
-DEVELOP vocab expert   no         yes          yes            yes
-DEVELOP panel          no         Sonnet 2-3   Sonnet 3-4     Opus 3-4, 2 rounds
-FINISH session notes   skip       yes          yes            yes
-FINISH arch docs       skip       if needed    yes            mandatory
-User confirm gates     no         no           on escalation  every gate
+                      trivial    standard        elevated          critical
+                      ───────    ────────        ────────          ────────
+PREPARE                skip       yes             yes               yes
+BRAINSTORM             skip       skip            if no spec        if no spec
+SPEC-REVIEW            skip       skip            Opus 2, 1 round   Opus 5→3 adaptive, 2 rounds
+PLAN                   skip       skip            yes               yes
+PLAN-REVIEW            skip       skip            Opus 2/task, 1    Opus 3→2 adaptive, 2 rounds
+DEVELOP worktree       no         yes             yes               yes
+DEVELOP vocab expert   no         yes             yes               yes
+DEVELOP panel          no         Sonnet 2, 1     Sonnet 2-3, 1     Opus 3, 2 rounds
+FINISH session notes   skip       yes             yes               yes
+FINISH arch docs       skip       if needed       yes               mandatory
+User confirm gates     no         no              on escalation     every gate
 ```
+
+Calibration note: panel sizes and round counts at `elevated` were reduced for Opus 4.7+ implementers. The implementer itself catches most of what a second reviewer round would flag. `critical` keeps the full multi-round safety net unchanged.
 
 ## Model Selection Rationale
 
-- **Sonnet** for standard implementation review — catches structural issues, fast, lower cost
+- **Sonnet** for standard and elevated implementation review — catches structural issues, fast, lower cost
 - **Opus** for spec/plan review at elevated+ — catches nuanced domain issues, architecture flaws
 - **Opus** for critical implementation review — load-bearing code warrants extra scrutiny
 
 ## Adaptive Panel Narrowing (Critical Only)
 
 At every review gate in the critical path:
-- **Round 1:** 5 experts, broad coverage
+- **Round 1:** 3-5 experts, broad coverage
 - **Round 2:** Narrow to 2-3 experts who had the strongest findings and strongest opinions from round 1
-- Rationale: don't pay for 5 experts to confirm nits are fixed
+- Rationale: don't pay for the full panel to confirm nits are fixed
+
+Elevated runs a single round with a 2-expert panel and does not narrow — one pass, then proceed.
 
 ## Size Guardrails
 

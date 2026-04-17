@@ -1,6 +1,6 @@
 {
   "name": "skylark-ai",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Skylark development workflow plugin — vocabulary-routed expert pipeline with risk-proportional gating",
   "author": "Skylark Team",
   "license": "MIT",

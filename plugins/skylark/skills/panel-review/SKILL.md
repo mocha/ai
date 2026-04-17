@@ -20,6 +20,10 @@ This is a **building block** — it does one thing (multi-expert review) and
 is composed by other skills. It does NOT modify documents or iterate.
 Callers handle iteration.
 
+## Communication Style
+
+Follows `_shared/communication-style.md`. Synthesis output is tight and actionable — blocking issues first, minor nits omitted when the reviewer would fix them themselves (per the autonomous-fix rule). Callers pass a risk tier which selects the review directive per `_shared/prompt-template.md`.
+
 ## Checklist
 
 Follow these steps in order. Do not skip steps.
@@ -61,9 +65,10 @@ Examples by document type:
 - Accessibility reviewer — WCAG conformance, keyboard nav, screen readers
 - UX engineer — user flow, error states, edge case UI
 
-The caller may specify panel size and model. If not specified, default to
-3 experts on Opus (reviews are leverage points — Opus catches operational
-gaps that save costly rework downstream).
+The caller specifies panel size, model, and **risk tier**. If not specified,
+default to 2 experts on Opus at elevated tier, 3 experts on Opus at critical
+tier. The risk tier determines which review directive is included in each
+expert's prompt (see Step 3).
 
 Log the panel composition (role + why included) in the synthesis output
 so the user can see who reviewed. Do NOT ask for confirmation before
@@ -87,15 +92,28 @@ Each expert's vocabulary MUST have at least one cluster unique to their
 perspective. Shared domain terms across experts are fine, but identical
 vocabulary sets defeat the purpose of multiple perspectives.
 
-Add this directive to each expert's prompt:
+Add the **risk-tiered review directive** to each expert's prompt per
+`_shared/prompt-template.md`:
+
+**Critical tier:**
 "You are one member of a review panel. Focus on your area of expertise.
 Other panelists are covering other angles — go deep on yours rather than
 trying to cover everything. You must identify at least one substantive
 issue or explicitly justify clearance with specific evidence. An empty
 Issues section is not acceptable unless accompanied by a detailed
-justification in the Verdict.
+justification in the Verdict."
 
-Resources available to you: explore `docs/` for additional context —
+**Elevated and below:**
+"You are one member of a review panel. Focus on your area of expertise.
+Other panelists are covering other angles — go deep on yours rather than
+trying to cover everything. Focus on blocking issues. Minor issues may be
+noted or omitted; if the document is sound, say so without forcing a
+finding. Nits you would fix yourself should be fixed (if you have that
+authority for the review context) or omitted."
+
+Append to either directive:
+
+"Resources available to you: explore `docs/` for additional context —
 `docs/strategy/` has design principles and user stories, `docs/architecture/`
 has architectural decision records. If you need a deeper expert opinion on
 a specific concern, you can invoke `/skylark:solo-review`."
@@ -117,22 +135,26 @@ Each agent call gets:
 
 ### 5. Synthesize findings
 
-When all experts return, produce a structured synthesis:
+When all experts return, produce a structured synthesis. Lead with what the caller needs to act on; omit sections that would be empty.
 
-**Panel Composition** — one line per expert: role, key vocabulary angle, why included
+**Panel Composition** — one line per expert: role, key vocabulary angle, why included.
 
-**Consensus** — issues flagged independently by 2+ experts (highest confidence findings, list each with the experts who flagged it)
+**Blocking Issues** — all `severity: blocking` issues across all experts, consolidated and deduped. This is the top of the report. If there are none, state that explicitly and move on.
 
-**Unique Findings** — important issues flagged by only one expert (domain-specific catches that justify having multiple perspectives)
+**Major Issues** — `severity: major` issues consolidated. Brief, actionable.
 
-**Disagreements** — where experts contradicted each other (present both sides with reasoning, do NOT resolve artificially — surface for the user)
+**Consensus** — issues flagged independently by 2+ experts (highest-confidence findings, list each with the experts who flagged it). Omit if no overlap.
 
-**Blocking Issues** — all severity:blocking issues across all experts, consolidated and deduped
+**Unique Findings** — important issues flagged by only one expert (domain-specific catches that justify having multiple perspectives). Omit if none are load-bearing.
 
-**Consolidated Verdict** — Ship | Revise | Rethink
+**Disagreements** — where experts contradicted each other (present both sides briefly, do NOT resolve artificially — surface for the user). Omit if none.
+
+**Consolidated Verdict** — Ship | Revise | Rethink, with a one-sentence rationale.
 - If any expert says "Rethink," that must be surfaced even if others say "Ship"
 - If all say "Ship" (possibly with nits), the consolidated verdict is "Ship"
 - Otherwise "Revise"
+
+Do not include a "Strengths" section at the synthesis level — callers don't need an analysis section, they need actionable next steps. Individual expert reports may include strengths per `prompt-template.md`; the synthesis summarizes what to do, not what was praised.
 
 ### 6. Save report and offer next steps
 

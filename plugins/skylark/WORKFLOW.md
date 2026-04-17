@@ -312,12 +312,12 @@ This table shows exactly which capabilities are active at each risk level. The p
 |---|:---:|:---:|:---:|:---:|
 | **PREPARE** | skip | yes | yes | yes |
 | **BRAINSTORM** | skip | skip | if no spec exists | if no spec exists |
-| **SPEC-REVIEW** | skip | skip | Opus, 3-4 experts | Opus, 5→3 adaptive |
+| **SPEC-REVIEW** | skip | skip | Opus, 2 experts, 1 round | Opus, 5→3 adaptive, 2 rounds |
 | **WRITE-PLAN** | skip | skip | yes | yes |
-| **PLAN-REVIEW** | skip | skip | Opus, 3-4 experts | Opus, 5→3 adaptive |
+| **PLAN-REVIEW** | skip | skip | Opus, 2 experts/task, 1 round | Opus, 3→2 adaptive, 2 rounds |
 | **DEVELOP: worktree isolation** | no | yes | yes | yes |
 | **DEVELOP: vocabulary-routed expert** | no | yes | yes | yes |
-| **DEVELOP: code quality panel** | no | Sonnet, 2-3 experts | Sonnet, 3-4 experts | Opus, 3-4 experts, 2 rounds |
+| **DEVELOP: code quality panel** | no | Sonnet, 2 experts, 1 round | Sonnet, 2-3 experts, 1 round | Opus, 3 experts, 2 rounds |
 | **FINISH: session notes** | skip | yes | yes | yes |
 | **FINISH: architecture doc check** | skip | if needed | yes | mandatory |
 | **User confirmation gates** | no | no | on escalation only | at every gate |
@@ -329,6 +329,7 @@ This table shows exactly which capabilities are active at each risk level. The p
 - **yes** — active with default configuration.
 - **Sonnet/Opus, N experts** — active with the specified model and panel size.
 - **5→3 adaptive** — first round uses 5 experts, second round narrows to the 2-3 who had the strongest findings.
+- **Calibration (2026-04-16):** Elevated uses 2-expert panels and a single round for both SPEC-REVIEW and PLAN-REVIEW. Opus 4.7-class implementers catch most of what a second round would surface. Critical remains the multi-round safety net.
 
 ### What this means in practice
 

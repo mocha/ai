@@ -5,9 +5,13 @@ description: Use when you have an approved spec or requirements for a multi-step
 
 # Writing Plans
 
-Write comprehensive implementation plans assuming the engineer has zero context for the codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write implementation plans for a capable vocabulary-routed implementer. Specify **interface shape and intent**, not function bodies — the implementer writes the implementation. DRY. YAGNI. TDD. Frequent commits.
 
-Assume they are a skilled developer, but know almost nothing about the toolset or problem domain. Assume they don't know good test design very well.
+Assume a skilled developer working with a fresh expert persona scoped to the task's domain. They know the toolset, they know test design, they know the patterns in this codebase. What they need from you is the boundary of the task, the interfaces it must produce or consume, the acceptance criteria, and the edge cases.
+
+They do **not** need pseudocode restating the obvious. Pseudocode in plans has become the primary source of reviewer nits — cut it.
+
+**Communication Style:** Plans follow `_shared/communication-style.md`. Tasks are tight, prose-first, scoped. Show code only when it disambiguates a non-obvious contract (a specific type signature, a particular data shape, a non-obvious API call order). Default to prose.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
@@ -19,7 +23,9 @@ If the spec covers multiple independent subsystems, it should have been broken i
 
 **Plan decomposition:** Plans have no hard token cap — they decompose by scope (8+ tasks or dense cross-dependencies → split into sub-plans). A plan is large because it contains many tasks; the right response is to decompose tasks, not to shrink the plan.
 
-**Task size limit:** Each individual task spec should target **~2,000 tokens** — small, focused, self-contained. The total dispatch payload (task spec + parent context + expert prompt) must fit within **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`. The implementer needs 80% of the context window for reading code, writing code, running tests, and self-review.
+**Task size target:** Each individual task spec should target **~800-1,000 tokens** — small, focused, prose-first. The total dispatch payload (task spec + parent context + expert prompt) must fit within **40,000 tokens** (20% of Sonnet's context window) per `_shared/risk-matrix.md`.
+
+If a task spec is trending over ~1,200 tokens, that's a signal you're writing implementation instead of specification. Cut pseudocode first, then consider splitting the task.
 
 **Architecture docs:** If the plan makes significant architectural decisions (technology choices, data model design, integration patterns), document them as ADRs in `docs/architecture/` — same format as brainstorm produces. Plans should reference architectural decisions, not embed lengthy justifications.
 
@@ -34,14 +40,17 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
-## Bite-Sized Task Granularity
+## Task Granularity
 
-**Each step is one action (2-5 minutes):**
-- "Write the failing test" — step
-- "Run it to make sure it fails" — step
-- "Implement the minimal code to make the test pass" — step
-- "Run the tests and make sure they pass" — step
-- "Commit" — step
+A task is one coherent unit of work the implementer can execute end-to-end: write tests, implement, verify, commit. You do not need to decompose that loop into five steps — the implementer knows the TDD cycle.
+
+A task is appropriately scoped when it:
+- Produces one testable capability or interface
+- Touches a bounded set of files (typically 1-4)
+- Has acceptance criteria that can be checked independently
+- Can be understood without reading other tasks first
+
+If a task needs the implementer to follow a non-obvious sequence across files, lay out the sequence as prose bullets. Don't pre-write the code they should produce.
 
 ## Plan Document Header
 
@@ -79,74 +88,64 @@ updated: YYYY-MM-DD
 
 **Domain:** [primary domain cluster — database, api, auth, events, ui, infra]
 **Dependencies:** [tasks that must complete first, or "none"]
-**Scope:** [what this task builds/changes]
+**Scope:** [1-2 sentences — what this task builds and why]
 
 **Files:**
 - Create: `exact/path/to/file.ts`
-- Modify: `exact/path/to/existing.ts:123-145`
+- Modify: `exact/path/to/existing.ts` (what changes, in one line)
 - Test: `tests/exact/path/to/test.ts`
+
+**Interface Shape:**
+
+Declare the public surface this task produces or consumes. Types, function signatures, config keys, API routes — whatever applies. No function bodies.
+
+```typescript
+export type SessionToken = { userId: string; issuedAt: number; scopes: string[] };
+export function issueSession(userId: string, scopes: string[]): SessionToken;
+export function revokeSession(token: SessionToken): void;
+```
 
 **Acceptance Criteria:**
 - [Concrete, testable — traced from spec ACs]
+- [Second AC]
 
-- [ ] **Step 1: Write the failing test**
+**Edge cases to handle:**
+- [Edge case 1 — e.g., expired tokens, empty scopes, concurrent revocations]
+- [Edge case 2]
 
-```typescript
-import { describe, it, expect } from 'vitest';
-import { specificFunction } from '../path/to/module';
+**Notes (optional):**
+- Patterns to follow — e.g., "Follow the repository/service split used in `src/billing/`"
+- Non-obvious sequencing — e.g., "Run migration before wiring the route handler"
+- Gotchas — e.g., "The existing `validate()` helper is case-sensitive"
 
-describe('specificFunction', () => {
-  it('should handle specific behavior', () => {
-    const result = specificFunction(input);
-    expect(result).toEqual(expected);
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `pnpm test -- --filter=specific-test`
-Expected: FAIL with "specificFunction is not defined"
-
-- [ ] **Step 3: Write minimal implementation**
-
-```typescript
-export function specificFunction(input: InputType): OutputType {
-  return expected;
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pnpm test -- --filter=specific-test`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tests/path/test.ts src/path/file.ts
-git commit -m "feat(bd-XXXX): add specific feature"
-```
+**Verification:** `pnpm test path/to/test.ts` passes; run full suite afterward.
 ````
+
+Commit instructions, TDD step-by-step choreography, and pseudocode implementations are not included by default. The implementer executes TDD via their own vocabulary-routed expert prompt and the `develop` skill. Your job is to specify the destination, not narrate the walk.
+
+Include a code snippet only when one of these is true:
+- The exact interface is non-obvious and naming it matters (type signatures, API contract)
+- A data shape needs to match an external contract (e.g., webhook payload, JSON schema)
+- A specific line in existing code needs to be located precisely (paste the 2-3 line neighborhood)
 
 ## No Placeholders
 
-Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
+Every element must be concrete and actionable. These are **plan failures** — never write them:
 
 - "TBD", "TODO", "implement later", "fill in details"
-- "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above" (without actual test code)
-- "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
-- Steps that describe what to do without showing how (code blocks required for code steps)
-- References to types, functions, or methods not defined in any task
-- "Configure as needed" / "adjust as appropriate" (show the exact configuration)
+- "Add appropriate error handling" — name the error cases the spec requires
+- "Handle edge cases" — list the edge cases in the Edge cases section
+- "Write tests for the above" — name the behaviors tests must cover in ACs
+- Types, functions, or methods referenced in later tasks but defined nowhere
+- "Configure as needed" — specify the configuration keys and their purpose
+
+Pseudocode function bodies are **not** required. If you find yourself writing one, ask whether it adds information the implementer couldn't derive from the interface shape and ACs. If not, delete it.
 
 ## Remember
 
-- Exact file paths always — absolute from repo root
-- Complete code in every step — if a step changes code, show the code
-- Exact commands with expected output
-- DRY, YAGNI, TDD, frequent commits
+- Exact file paths — absolute from repo root
+- Interface shapes, not function bodies
+- DRY, YAGNI, TDD, frequent commits (the implementer handles these — you state the goal)
 
 ## Self-Review
 
@@ -164,7 +163,9 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **6. Verification steps:** Every task has at least one "Run: ... Expected: ..." step.
 
-**7. Task sizes:** Each task spec should be ~2,000 tokens. For each task, estimate the combined dispatch payload (spec + parent context + expert prompt). If any task would exceed 40,000 tokens per `_shared/risk-matrix.md`, break it into smaller tasks. A task that needs that much context is trying to do too much.
+**7. Task sizes:** Each task spec should target ~800-1,000 tokens. For each task, estimate the combined dispatch payload (spec + parent context + expert prompt). If any task would exceed 40,000 tokens per `_shared/risk-matrix.md`, break it into smaller tasks. A task that needs that much context is trying to do too much.
+
+**8. Pseudocode sweep:** Scan every task for function bodies, full SQL statements, or step-by-step code narration. If a code block doesn't disambiguate a non-obvious interface or data shape, delete it. Pseudocode in task specs drives reviewer nits without helping the implementer.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on.
 

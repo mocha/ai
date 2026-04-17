@@ -77,10 +77,12 @@ Read `_shared/risk-matrix.md` for the full classification table. Apply in order:
 1. **User declaration** takes precedence ("this is load-bearing" → critical)
 2. **Domain analysis:**
    - Single file, clear fix → trivial
-   - Few files, one bounded context → standard
-   - Multiple contexts, schema changes, auth/billing → elevated
+   - Few files, one bounded context (including single-context schema migrations and self-contained auth/billing tweaks) → standard
+   - Cross-context changes touching 3+ bounded contexts, or auth/billing/schema changes that affect multiple consumers → elevated
    - Architectural change, new integration, breaking change → critical
 3. **Dependency density** — artifacts that many other tasks depend on trend toward elevated+
+
+Calibration note: `standard` is the default tier for most focused work. Do not escalate to `elevated` on the basis of schema or auth keywords alone — the keyword matters less than whether the change crosses bounded contexts.
 
 ### Step 5: Determine Pipeline Path
 

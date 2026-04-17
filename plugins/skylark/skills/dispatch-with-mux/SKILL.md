@@ -300,8 +300,10 @@ Only after spec compliance passes. For each compliant task, invoke
 `/skylark:panel-review` per `develop/SKILL.md` Step 8.
 
 Panel size and model per `_shared/risk-matrix.md`:
-- Elevated: Sonnet, 3-4 experts, 1 round
-- Critical: Opus, 3-4 experts, 2 rounds (adaptive narrowing)
+- Elevated: Sonnet, 2-3 experts, 1 round
+- Critical: Opus, 3 experts, 2 rounds (adaptive narrowing)
+
+Pass the risk tier to panel-review so it selects the correct review directive per `_shared/prompt-template.md`.
 
 Review target: implementation diff in the worktree.
 

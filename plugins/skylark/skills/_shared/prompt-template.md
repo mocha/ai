@@ -8,6 +8,11 @@ Output skeleton for generated expert prompts. Section order matters — it contr
 ## Identity
 You are a [real job title] [primary responsibility]. [Authority boundary].
 
+## Communication Style
+[Contents of `_shared/communication-style.md`, inlined verbatim. Plain language,
+concise, actionable output, autonomous small-fix rule. This sits between Identity
+and Vocabulary so it primes the role before knowledge activation.]
+
 ## Domain Vocabulary
 
 **Cluster 1 — [Cluster Name]**
@@ -99,10 +104,30 @@ Ship | Revise | Rethink — one sentence justification.
 - Vocabulary terms pass the 15-year practitioner test
 - No meta-commentary ("this prompt is designed to...") — output is instructions, not a document about instructions
 
-## Mandatory Review Directive
+## Review Directive (Risk-Tiered)
 
-All review prompts must include this directive (adapt wording to context):
+Review prompts include one of two directives based on the risk tier the caller passes in:
+
+**Critical risk** — include the strong mandate:
 
 > "You must identify at least one substantive issue or explicitly justify clearance with specific evidence."
 
-This prevents rubber-stamp approvals where experts default to "looks good" without deep engagement.
+This prevents rubber-stamp approvals on load-bearing work where experts might default to "looks good" without deep engagement.
+
+**Elevated and below** — include the softer directive:
+
+> "Focus on blocking issues. Minor issues may be noted or omitted; if the document is sound, say so without forcing a finding. Nits you would fix yourself should be fixed, not flagged."
+
+The softer directive combines with the Autonomous Minor Fixes rule in `communication-style.md` — reviewers at non-critical tiers don't need to manufacture findings to justify the review.
+
+## User Preferences (Conditional)
+
+If `.claude/skylark-prompt-mods.md` exists at the project root, append its contents verbatim as a final section at the end of every generated expert prompt:
+
+```markdown
+## User Preferences
+
+[Contents of .claude/skylark-prompt-mods.md, verbatim]
+```
+
+If the file is absent, skip this section entirely. See `expert-prompt-generator.md` Step 6 for the assembly contract.

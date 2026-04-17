@@ -7,6 +7,8 @@ description: Internal pipeline stage that enriches an input with execution conte
 
 Enrich an input with the context needed for effective development. This stage bridges the gap between "what the input says" and "what the developer needs to know."
 
+**Communication Style:** Follows `_shared/communication-style.md`. The prepared artifact should be dense with references and vocabulary terms rather than explanatory prose — the implementer is a vocabulary-routed expert, not a generalist. Apply the autonomous-fix rule during AC sharpening (small phrasing fixes, obvious missing details get added inline without asking).
+
 ## When Called
 
 Called by `/skylark:implement` for standard+ risk work. Receives the triage classification and the raw input.
