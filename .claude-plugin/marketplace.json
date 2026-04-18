@@ -50,6 +50,13 @@
       "version": "0.1.0",
       "description": "Three-agent (PM/PgM/EM) autonomous development framework coordinating via file-based inbox messaging over tmux. Historical experiment preserved for analysis and remixing.",
       "tags": ["agent-triad", "multi-agent", "autonomous-workflow", "tmux", "historical"]
+    },
+    {
+      "name": "garden",
+      "source": "./plugins/garden",
+      "version": "0.2.0",
+      "description": "Knowledge graph pipeline for Obsidian vaults. Autonomous gardener agents classify, decompose, and graph markdown content into a connected knowledge graph through atomic claims with provenance citations.",
+      "tags": ["knowledge-graph", "obsidian", "vault", "pipeline", "gardener", "claims"]
     }
   ]
 }

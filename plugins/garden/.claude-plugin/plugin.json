@@ -1,0 +1,19 @@
+{
+  "name": "garden",
+  "description": "Knowledge graph pipeline for Obsidian vaults. Classify, decompose, and graph markdown content — turning raw notes into a connected knowledge graph through atomic claims with provenance citations.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Patrick Deuley"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-graph",
+    "obsidian",
+    "vault",
+    "pipeline",
+    "classification",
+    "decomposition",
+    "claims",
+    "gardener"
+  ]
+}
